@@ -1,7 +1,37 @@
-.DS_Store
+# Environment variables
 .env
-/node_modules/
+.env.local
+.env.*.local
 
-# React Router
-/.react-router/
-/build/
+# Logs
+logs/
+*.log
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.cache/
+.react-router/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.playwright/
+test-results/
+playwright-report/
+
+# Temporary files
+*.tmp
+.temp/
