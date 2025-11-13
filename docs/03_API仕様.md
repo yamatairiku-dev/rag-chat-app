@@ -10,7 +10,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| Base URL | `{DIFY_API_URL}/v1` |
+| Base URL | `{DIFY_API_URL}` |
 | 認証方式 | Bearer Token (API Key) |
 | Content-Type | `application/json` |
 | タイムアウト | 30秒 |
@@ -267,7 +267,7 @@ data: {"event": "message_end", "task_id": "abc123", "id": "msg1", "message_id": 
 #### Request
 
 ```bash
-GET /v1/conversations/{conversation_id}/messages?user=user@company.com&limit=20
+GET {DIFY_API_URL}/conversations/{conversation_id}/messages?user=user@company.com&limit=20
 Authorization: Bearer app-xxxxxxxx
 ```
 
@@ -312,7 +312,7 @@ interface ConversationMessagesResponse {
 #### Request
 
 ```bash
-DELETE /v1/conversations/{conversation_id}?user=user@company.com
+DELETE {DIFY_API_URL}/conversations/{conversation_id}?user=user@company.com
 Authorization: Bearer app-xxxxxxxx
 ```
 
