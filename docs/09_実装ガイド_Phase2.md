@@ -15,6 +15,14 @@
 
 ---
 
+## ストリーミングAPIと会話保存の実装メモ
+
+- SSEエンドポイントは `app/routes/api.chat-stream.ts` に定義します。認証セッションの検証後、`DifyClient.streamMessage` のイベントを `text/event-stream` としてフロントエンドへ送信します。
+- 受信した会話は `app/lib/chat/conversation-store.server.ts` のインメモリストアに蓄積します。将来的にDBへ差し替えられるよう、会話ID・ユーザーID・部署コードを保存します。
+- フロントエンド (`app/routes/chat.tsx`) は `/api/chat-stream` にPOSTし、受信した`data:`イベントを逐次描画します。`conversation_id` が返却されたタイミングでクライアント側のセッションストレージも更新してください。
+
+---
+
 ## ステップ1: 型定義
 
 ### ファイル: `app/types/dify.ts`, `app/types/chat.ts`

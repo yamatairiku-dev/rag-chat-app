@@ -1,7 +1,9 @@
 // app/routes/api.chat-stream.ts
+import { randomUUID } from "crypto";
 import type { ActionFunctionArgs } from "react-router";
 import { ensureValidToken } from "~/lib/session/token-refresh";
 import { getSessionWithId } from "~/lib/session/session-manager";
+import { appendConversationMessages } from "~/lib/chat/conversation-store.server";
 import { DifyClient } from "~/lib/dify/client";
 import { env } from "~/lib/utils/env";
 import { AppError, ErrorCode } from "~/types/error";
@@ -92,6 +94,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      const initialConversationId =
+        typeof conversationId === "string" ? conversationId : "";
+      const userMessageId = randomUUID();
+      const assistantMessageId = randomUUID();
+      const startedAt = Date.now();
+
+      const userMessage = {
+        id: userMessageId,
+        role: "user" as const,
+        content: trimmedQuery,
+        timestamp: startedAt,
+      };
+
+      let assistantContent = "";
+      let assistantError: string | undefined;
+      let assistantTimestamp = startedAt;
+      let effectiveConversationId = initialConversationId;
+      let shouldPersist = false;
+
       try {
         for await (const event of client.streamMessage({
           inputs: {
@@ -100,14 +121,38 @@ export async function action({ request }: ActionFunctionArgs) {
           },
           query: trimmedQuery,
           response_mode: "streaming",
-          conversation_id:
-            typeof conversationId === "string" ? conversationId : "",
+          conversation_id: initialConversationId,
           user: session.userEmail,
         })) {
           controller.enqueue(formatSse(event));
+          assistantTimestamp = Date.now();
+
+          if (event.event === "message") {
+            assistantContent += event.answer ?? "";
+            if (
+              event.conversation_id &&
+              event.conversation_id !== effectiveConversationId
+            ) {
+              effectiveConversationId = event.conversation_id;
+            }
+          } else if (event.event === "message_end") {
+            if (
+              event.conversation_id &&
+              event.conversation_id !== effectiveConversationId
+            ) {
+              effectiveConversationId = event.conversation_id;
+            }
+          } else if (event.event === "error") {
+            assistantError =
+              typeof event.message === "string"
+                ? event.message
+                : "メッセージ送信に失敗しました。";
+          }
         }
+
         controller.enqueue(formatSse({ event: "done" }));
         controller.close();
+        shouldPersist = true;
       } catch (error) {
         const message =
           error instanceof AppError
@@ -127,7 +172,38 @@ export async function action({ request }: ActionFunctionArgs) {
         } finally {
           controller.close();
         }
+
+        assistantError = message;
+        shouldPersist = true;
       }
+
+      if (!shouldPersist) {
+        return;
+      }
+
+      const resolvedConversationId = effectiveConversationId;
+      const assistantPayload =
+        assistantError ?? assistantContent;
+
+      if (!resolvedConversationId || !assistantPayload) {
+        return;
+      }
+
+      await appendConversationMessages({
+        conversationId: resolvedConversationId,
+        userId: session.userId,
+        departmentCode: session.departmentCode,
+        messages: [
+          userMessage,
+          {
+            id: assistantMessageId,
+            role: "assistant",
+            content: assistantPayload,
+            timestamp: assistantTimestamp,
+            error: assistantError,
+          },
+        ],
+      });
     },
     cancel() {
       // Nothing to clean up currently.
