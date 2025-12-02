@@ -7,6 +7,7 @@ import { appendConversationMessages } from "~/lib/chat/conversation-store.server
 import { DifyClient } from "~/lib/dify/client";
 import { env } from "~/lib/utils/env";
 import { AppError, ErrorCode } from "~/types/error";
+import { logger } from "~/lib/logging/logger";
 
 const encoder = new TextEncoder();
 
@@ -32,6 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (error instanceof AppError && error.code === ErrorCode.AUTH_TOKEN_EXPIRED) {
       return new Response(null, { status: 401 });
     }
+    logger.error("Token refresh error in chat-stream", { error });
     throw error;
   }
 
@@ -154,6 +156,7 @@ export async function action({ request }: ActionFunctionArgs) {
         controller.close();
         shouldPersist = true;
       } catch (error) {
+        logger.error("Streaming error in chat-stream", { error });
         const message =
           error instanceof AppError
             ? error.message

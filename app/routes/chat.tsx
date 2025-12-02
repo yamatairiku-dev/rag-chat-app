@@ -13,6 +13,10 @@ import { AppError, ErrorCode } from "~/types/error";
 import { DifyClient } from "~/lib/dify/client";
 import { env } from "~/lib/utils/env";
 import { ConversationManager } from "~/lib/chat/conversation-manager";
+import { getConversation } from "~/lib/chat/conversation-store.server";
+import { Header } from "~/components/layout/Header";
+import { ChatMessage } from "~/components/chat/ChatMessage";
+import { logger } from "~/lib/logging/logger";
 
 type LoaderData = {
   user: {
@@ -21,6 +25,8 @@ type LoaderData = {
     departmentCode: string;
     departmentName?: string;
   };
+  conversationId?: string;
+  initialMessages?: Message[];
 };
 
 type ActionSuccess = {
@@ -56,16 +62,39 @@ export async function loader({ request }: Route.LoaderArgs) {
       }
     }
 
-    return Response.json({
+    const url = new URL(request.url);
+    const conversationId = url.searchParams.get("conversationId") ?? undefined;
+
+    let initialMessages: Message[] | undefined;
+
+    if (conversationId) {
+      const existing = await getConversation(conversationId);
+      if (existing && existing.userId === session.userId) {
+        initialMessages = existing.messages.map((message) => ({
+          id: message.id,
+          conversationId: existing.conversationId,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+          isStreaming: false,
+          isComplete: true,
+          error: message.error,
+        }));
+      }
+    }
+
+    return Response.json<LoaderData>({
       user: {
         displayName: session.displayName,
         userEmail: session.userEmail,
         departmentCode: session.departmentCode,
         departmentName: session.departmentName,
       },
+      conversationId,
+      initialMessages,
     });
   } catch (error) {
-    console.error("セッション取得エラー:", error);
+    logger.error("セッション取得エラー", { error });
     return redirect("/auth/login");
   }
 }
@@ -121,7 +150,7 @@ export async function action({ request }: Route.ActionArgs) {
       messageId: response.message_id,
     });
   } catch (error) {
-    console.error("Dify API呼び出しエラー:", error);
+    logger.error("Dify API呼び出しエラー", { error });
 
     const message =
       error instanceof AppError
@@ -153,9 +182,14 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Chat() {
-  const { user } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [conversationId, setConversationId] = useState<string>("");
+  const { user, initialMessages, conversationId: loaderConversationId } =
+    useLoaderData<LoaderData>();
+  const [messages, setMessages] = useState<Message[]>(
+    () => initialMessages ?? [],
+  );
+  const [conversationId, setConversationId] = useState<string>(
+    loaderConversationId ?? "",
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
 
@@ -164,11 +198,16 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (loaderConversationId) {
+      ConversationManager.setConversationId(loaderConversationId);
+      return;
+    }
+
     const storedId = ConversationManager.getConversationId();
     if (storedId) {
       setConversationId(storedId);
     }
-  }, []);
+  }, [loaderConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -434,20 +473,7 @@ export default function Chat() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="container mx-auto flex flex-col gap-2 px-4 py-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">社内RAGチャット</h1>
-            <p className="text-sm text-gray-500">
-              {user.departmentName} ({user.departmentCode}) / {user.displayName}
-            </p>
-          </div>
-          {formError && (
-            <p className="text-sm text-red-600">{formError}</p>
-          )}
-        </div>
-      </header>
-
+      <Header user={user} errorMessage={formError} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
         <div className="flex-1 overflow-y-auto rounded-lg bg-white p-6 shadow">
           {messages.length === 0 ? (
@@ -456,38 +482,7 @@ export default function Chat() {
             </div>
           ) : (
             messages.map((message) => (
-              <div
-                key={message.id}
-                className={`mb-4 flex ${
-                  message.role === "user"
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 text-sm shadow ${
-                    message.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap leading-relaxed">
-                    {message.role === "assistant" && message.isStreaming ? (
-                      <>
-                        {message.content}
-                        <span className="ml-1 animate-pulse">▋</span>
-                      </>
-                    ) : (
-                      message.content
-                    )}
-                  </p>
-                  {message.error && (
-                    <p className="mt-2 text-xs text-red-200">
-                      {message.error}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <ChatMessage key={message.id} message={message} />
             ))
           )}
           <div ref={messagesEndRef} />

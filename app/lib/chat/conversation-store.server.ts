@@ -79,3 +79,8 @@ export async function clearConversations(): Promise<void> {
   conversations.clear();
 }
 
+export async function deleteConversation(
+  conversationId: string,
+): Promise<void> {
+  conversations.delete(conversationId);
+}

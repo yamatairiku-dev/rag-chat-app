@@ -12,5 +12,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: env.PORT ? parseInt(env.PORT, 10) : 5173,
     },
+    test: {
+      // E2Eテストを除外（Playwrightで実行）
+      exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**", "**/*.e2e.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    },
   };
 });
