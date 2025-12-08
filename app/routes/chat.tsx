@@ -196,6 +196,8 @@ export default function Chat() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     if (loaderConversationId) {
@@ -214,10 +216,40 @@ export default function Chat() {
   }, [messages]);
 
   useEffect(() => {
+    setIsMounted(true);
     return () => {
       abortControllerRef.current?.abort();
     };
   }, []);
+
+  // textareaの高さを自動調整
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // まず高さをリセットして1行に戻す
+      textarea.style.height = "2.5rem";
+      // スクロール高さを取得
+      const scrollHeight = textarea.scrollHeight;
+      const maxHeight = 200; // 最大高さ（px）
+      // スクロール高さが1行より大きい場合のみ高さを調整
+      if (scrollHeight > 40) {
+        textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isMounted && textareaRef.current) {
+      adjustTextareaHeight();
+    }
+  }, [messages, isMounted]); // メッセージ送信後も高さをリセット
+
+  // マウント時に初期高さを設定
+  useEffect(() => {
+    if (isMounted && textareaRef.current) {
+      adjustTextareaHeight();
+    }
+  }, [isMounted]);
 
   const startStreaming = async (query: string) => {
     if (isStreaming) {
@@ -486,6 +518,29 @@ export default function Chat() {
     void startStreaming(trimmed);
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enterキーが押されたとき
+    if (event.key === "Enter") {
+      // Shift+Enterの場合は改行を許可
+      if (event.shiftKey) {
+        return;
+      }
+      // Enterのみの場合は送信
+      event.preventDefault();
+      const form = formRef.current;
+      if (form) {
+        const formData = new FormData(form);
+        const query = (formData.get("query") as string | null) ?? "";
+        const trimmed = query.trim();
+
+        if (trimmed && !isStreaming) {
+          setFormError(null);
+          void startStreaming(trimmed);
+        }
+      }
+    }
+  };
+
   const handleRetry = (query: string) => {
     setFormError(null);
     void startStreaming(query);
@@ -535,19 +590,26 @@ export default function Chat() {
               メッセージ入力
             </label>
             <textarea
+              ref={textareaRef}
               id="chat-query"
               name="query"
-              rows={2}
-              className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="社内規則やマニュアルについて質問してください…"
+              rows={1}
+              className={`w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                isMounted ? "overflow-hidden" : ""
+              }`}
+              placeholder="社内規則やマニュアルについて質問してください…（Enterで送信、Shift+Enterで改行）"
               disabled={isStreaming}
               aria-label="メッセージ入力欄"
               aria-describedby={formError ? "form-error" : undefined}
               aria-invalid={!!formError}
+              onInput={adjustTextareaHeight}
+              onKeyDown={handleKeyDown}
+              style={{ height: "2.5rem", minHeight: "2.5rem", maxHeight: "200px" }}
             />
             <button
               type="submit"
-              className="rounded bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 self-start whitespace-nowrap"
+              style={{ height: "2.5rem", writingMode: "horizontal-tb" }}
               disabled={isStreaming}
               aria-label={isStreaming ? "送信中" : "メッセージを送信"}
             >

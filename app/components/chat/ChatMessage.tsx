@@ -32,6 +32,14 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
     }
   }, [message.content]);
 
+  // メッセージの先頭と末尾の空行を削除し、連続する空行を1つにまとめる
+  const normalizeContent = (content: string): string => {
+    return content
+      .replace(/^\n+/, "") // 先頭の改行を削除
+      .replace(/\n+$/, "") // 末尾の改行を削除
+      .replace(/\n{3,}/g, "\n\n"); // 3つ以上の連続する改行を2つに統一
+  };
+
   const createCodeComponent = () => {
     return ({ node, inline, className, children, ...props }: any) => {
       if (inline) {
@@ -77,7 +85,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             : "bg-gray-100 text-gray-800"
         }`}
       >
-        <div className="whitespace-pre-wrap leading-relaxed">
+        <div className="leading-relaxed">
           {message.role === "assistant" && message.isStreaming ? (
             <>
               <ReactMarkdown
@@ -86,7 +94,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
                   code: createCodeComponent(),
                 }}
               >
-                {message.content || ""}
+                {normalizeContent(message.content || "")}
               </ReactMarkdown>
               <span className="ml-1 animate-pulse" aria-label="入力中" aria-live="polite">▋</span>
             </>
@@ -97,7 +105,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
                 code: createCodeComponent(),
               }}
             >
-              {message.content}
+              {normalizeContent(message.content)}
             </ReactMarkdown>
           )}
         </div>

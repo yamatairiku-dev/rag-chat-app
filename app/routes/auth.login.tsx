@@ -2,16 +2,68 @@
 import type { Route } from "./+types/auth.login";
 import { getAuthorizationUrl } from "~/lib/auth/entra-client";
 import { redirect } from "react-router";
+import { getSession } from "~/lib/session/session-manager";
 
-export async function loader({}: Route.LoaderArgs) {
-  try {
-    console.log("[ログイン] 認証URL生成開始");
-    const authUrl = await getAuthorizationUrl();
-    console.log("[ログイン] 認証URL生成完了:", authUrl.substring(0, 100) + "...");
-    return redirect(authUrl);
-  } catch (error) {
-    console.error("[ログイン] 認証URL生成エラー:", error);
-    throw new Response("認証URLの生成に失敗しました", { status: 500 });
+export async function loader({ request }: Route.LoaderArgs) {
+  // 既にログインしている場合はチャット画面へリダイレクト
+  const session = await getSession(request);
+  if (session) {
+    return redirect("/chat");
   }
+
+  // クエリパラメータでaction=redirectが指定されている場合のみEntra IDにリダイレクト
+  const url = new URL(request.url);
+  const action = url.searchParams.get("action");
+  
+  if (action === "redirect") {
+    try {
+      console.log("[ログイン] 認証URL生成開始");
+      const authUrl = await getAuthorizationUrl();
+      console.log("[ログイン] 認証URL生成完了:", authUrl.substring(0, 100) + "...");
+      return redirect(authUrl);
+    } catch (error) {
+      console.error("[ログイン] 認証URL生成エラー:", error);
+      throw new Response("認証URLの生成に失敗しました", { status: 500 });
+    }
+  }
+
+  // デフォルトではログインページを表示
+  return null;
+}
+
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "ログイン - 社内RAG検索チャットボット" },
+    {
+      name: "description",
+      content: "社内規則・マニュアルを検索できるチャットボットにログイン",
+    },
+  ];
+}
+
+export default function Login() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+            社内RAG検索チャットボット
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            社内規則・マニュアルを検索できます
+          </p>
+        </div>
+        <form method="get" action="/auth/login">
+          <input type="hidden" name="action" value="redirect" />
+          <button
+            type="submit"
+            className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            ログイン
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
