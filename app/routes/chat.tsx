@@ -192,12 +192,14 @@ export default function Chat() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const compositionEndTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (loaderConversationId) {
@@ -518,9 +520,28 @@ export default function Chat() {
     void startStreaming(trimmed);
   };
 
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
+    // 変換確定直後のEnterキーを無視するため、タイムスタンプを記録
+    compositionEndTimeRef.current = Date.now();
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Enterキーが押されたとき
     if (event.key === "Enter") {
+      // IME変換中（日本語入力中）の場合は送信しない
+      if (isComposing || event.nativeEvent.isComposing) {
+        return;
+      }
+      // 変換確定直後（200ms以内）のEnterキーは無視
+      const timeSinceCompositionEnd = Date.now() - compositionEndTimeRef.current;
+      if (timeSinceCompositionEnd < 200) {
+        return;
+      }
       // Shift+Enterの場合は改行を許可
       if (event.shiftKey) {
         return;
@@ -604,6 +625,8 @@ export default function Chat() {
               aria-invalid={!!formError}
               onInput={adjustTextareaHeight}
               onKeyDown={handleKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               style={{ height: "2.5rem", minHeight: "2.5rem", maxHeight: "200px" }}
             />
             <button
