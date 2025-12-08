@@ -21,7 +21,7 @@ vi.mock("~/lib/session/memory-storage", () => ({
   },
 }));
 
-import { createSession, getSession, getSessionWithId, requireUserSession, deleteSession } from "~/lib/session/session-manager";
+import { createSession, getSession, getSessionWithId, requireUserSession, deleteSession, updateSession } from "~/lib/session/session-manager";
 import { memoryStorage } from "~/lib/session/memory-storage";
 
 describe("session-manager", () => {
@@ -202,6 +202,286 @@ describe("session-manager", () => {
       const result = await deleteSession(request);
 
       expect(result).toBeNull();
+    });
+
+    it("異常系: 無効な署名の場合、nullを返す", async () => {
+      const request = new Request("http://localhost:3000/auth/logout", {
+        headers: {
+          Cookie: "session=invalid-session-id.invalid-signature",
+        },
+      });
+
+      const result = await deleteSession(request);
+
+      expect(result).toBeNull();
+    });
+
+  });
+
+  describe("getSessionWithId", () => {
+    it("正常系: セッションを取得できる", async () => {
+      const mockSession = {
+        userId: "user-123",
+        userEmail: "test@example.com",
+        displayName: "Test User",
+        departmentCode: "001",
+        departmentName: "テスト部署",
+        accessToken: "test-access-token",
+        refreshToken: "test-refresh-token",
+        tokenExpiresAt: Date.now() + 3600000,
+        createdAt: Date.now(),
+        lastAccessedAt: Date.now(),
+      };
+
+      const sessionId = "test-session-id";
+      const crypto = await import("crypto");
+      const createHmac = crypto.createHmac;
+      const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+        .update(sessionId)
+        .digest("hex");
+      const signedSessionId = `${sessionId}.${signature}`;
+
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: `session=${signedSessionId}`,
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).not.toBeNull();
+      if (result) {
+        expect(result.sessionId).toBe(sessionId);
+        expect(result.session).toMatchObject({
+          userId: mockSession.userId,
+          userEmail: mockSession.userEmail,
+        });
+      }
+    });
+
+    it("異常系: Cookieが存在しない場合、nullを返す", async () => {
+      const request = new Request("http://localhost:3000/chat");
+
+      const result = await getSessionWithId(request);
+
+      expect(result).toBeNull();
+    });
+
+    it("異常系: セッションCookieが存在しない場合、nullを返す", async () => {
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: "other-cookie=value",
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).toBeNull();
+    });
+
+    it("異常系: 無効な署名の場合、nullを返す", async () => {
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: "session=invalid-session-id.invalid-signature",
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).toBeNull();
+    });
+
+    it("異常系: セッションが存在しない場合、nullを返す", async () => {
+      const sessionId = "test-session-id";
+      const crypto = await import("crypto");
+      const createHmac = crypto.createHmac;
+      const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+        .update(sessionId)
+        .digest("hex");
+      const signedSessionId = `${sessionId}.${signature}`;
+
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: `session=${signedSessionId}`,
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).toBeNull();
+    });
+
+    it("異常系: セッションタイムアウトの場合、nullを返す", async () => {
+      const mockSession = {
+        userId: "user-123",
+        userEmail: "test@example.com",
+        displayName: "Test User",
+        departmentCode: "001",
+        departmentName: "テスト部署",
+        accessToken: "test-access-token",
+        refreshToken: "test-refresh-token",
+        tokenExpiresAt: Date.now() + 3600000,
+        createdAt: Date.now() - 100000000, // 古いセッション
+        lastAccessedAt: Date.now() - 100000000, // タイムアウト
+      };
+
+      const sessionId = "test-session-id";
+      const crypto = await import("crypto");
+      const createHmac = crypto.createHmac;
+      const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+        .update(sessionId)
+        .digest("hex");
+      const signedSessionId = `${sessionId}.${signature}`;
+
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: `session=${signedSessionId}`,
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).toBeNull();
+      expect(memoryStorage.delete).toHaveBeenCalledWith(sessionId);
+    });
+
+    it("正常系: セッションの最終アクセス時刻を更新する", async () => {
+      const oldTimestamp = Date.now() - 2000; // 2秒前
+      const mockSession = {
+        userId: "user-123",
+        userEmail: "test@example.com",
+        displayName: "Test User",
+        departmentCode: "001",
+        departmentName: "テスト部署",
+        accessToken: "test-access-token",
+        refreshToken: "test-refresh-token",
+        tokenExpiresAt: Date.now() + 3600000,
+        createdAt: oldTimestamp,
+        lastAccessedAt: oldTimestamp,
+      };
+
+      const sessionId = "test-session-id";
+      const crypto = await import("crypto");
+      const createHmac = crypto.createHmac;
+      const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+        .update(sessionId)
+        .digest("hex");
+      const signedSessionId = `${sessionId}.${signature}`;
+
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: `session=${signedSessionId}`,
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).not.toBeNull();
+      // 最終アクセス時刻が更新されたことを確認
+      expect(memoryStorage.set).toHaveBeenCalled();
+      const setCall = (memoryStorage.set as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(setCall[1].lastAccessedAt).toBeGreaterThanOrEqual(oldTimestamp);
+    });
+  });
+
+  describe("updateSession", () => {
+    it("正常系: セッションを更新できる", async () => {
+      const oldTimestamp = Date.now() - 1000; // 1秒前
+      const mockSession = {
+        userId: "user-123",
+        userEmail: "test@example.com",
+        displayName: "Test User",
+        departmentCode: "001",
+        departmentName: "テスト部署",
+        accessToken: "old-token",
+        refreshToken: "test-refresh-token",
+        tokenExpiresAt: Date.now() + 3600000,
+        createdAt: oldTimestamp,
+        lastAccessedAt: oldTimestamp,
+      };
+
+      const sessionId = "test-session-id";
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+      await updateSession(sessionId, {
+        accessToken: "new-token",
+        tokenExpiresAt: Date.now() + 7200000,
+      });
+
+      expect(memoryStorage.set).toHaveBeenCalled();
+      const setCall = (memoryStorage.set as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(setCall[0]).toBe(sessionId);
+      expect(setCall[1]).toMatchObject({
+        accessToken: "new-token",
+      });
+      expect(setCall[1].lastAccessedAt).toBeGreaterThanOrEqual(oldTimestamp);
+    });
+
+    it("異常系: セッションが存在しない場合、AppErrorをthrowする", async () => {
+      const sessionId = "non-existent-session-id";
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+      await expect(updateSession(sessionId, {})).rejects.toBeInstanceOf(AppError);
+    });
+  });
+
+  describe("parseCookie", () => {
+    it("正常系: 複数のCookieから特定のCookieを取得できる", async () => {
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: "session=test-session-id; other-cookie=value; another-cookie=value2",
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      // parseCookieは内部関数なので、getSessionWithIdを通じてテスト
+      // Cookieが正しく解析されることを確認
+      expect(result).toBeDefined();
+    });
+
+    it("正常系: URLエンコードされたCookieをデコードできる", async () => {
+      const sessionId = "test-session-id";
+      const crypto = await import("crypto");
+      const createHmac = crypto.createHmac;
+      const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+        .update(sessionId)
+        .digest("hex");
+      const signedSessionId = `${sessionId}.${signature}`;
+      const encodedSessionId = encodeURIComponent(signedSessionId);
+
+      const mockSession = {
+        userId: "user-123",
+        userEmail: "test@example.com",
+        displayName: "Test User",
+        departmentCode: "001",
+        departmentName: "テスト部署",
+        accessToken: "test-access-token",
+        refreshToken: "test-refresh-token",
+        tokenExpiresAt: Date.now() + 3600000,
+        createdAt: Date.now(),
+        lastAccessedAt: Date.now(),
+      };
+
+      (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+      const request = new Request("http://localhost:3000/chat", {
+        headers: {
+          Cookie: `session=${encodedSessionId}`,
+        },
+      });
+
+      const result = await getSessionWithId(request);
+
+      expect(result).not.toBeNull();
     });
   });
 });

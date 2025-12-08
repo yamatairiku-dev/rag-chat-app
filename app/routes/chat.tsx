@@ -425,10 +425,24 @@ export default function Chat() {
       }
     } catch (error) {
       if (!controller.signal.aborted) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "メッセージ送信に失敗しました。";
+        let message = "メッセージ送信に失敗しました。";
+        
+        if (error instanceof Error) {
+          // エラーメッセージをユーザーフレンドリーに変換
+          if (error.message.includes("Dify APIとの通信に失敗しました")) {
+            message = "サービスに接続できませんでした。ネットワーク接続を確認して、しばらく時間をおいて再度お試しください。";
+          } else if (error.message.includes("タイムアウト")) {
+            message = "リクエストがタイムアウトしました。時間をおいて再度お試しください。";
+          } else if (error.message.includes("400") || error.message.includes("bad_request")) {
+            message = "リクエストが不正です。メッセージの内容を確認してください。";
+          } else if (error.message.includes("401") || error.message.includes("unauthorized")) {
+            message = "認証エラーが発生しました。ページを再読み込みしてください。";
+          } else if (error.message.includes("500") || error.message.includes("internal_server_error")) {
+            message = "サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。";
+          } else {
+            message = error.message;
+          }
+        }
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -439,6 +453,7 @@ export default function Chat() {
                   isStreaming: false,
                   isComplete: true,
                   error: message,
+                  retryQuery: query, // リトライ用にクエリを保存
                 }
               : msg,
           ),
@@ -471,21 +486,36 @@ export default function Chat() {
     void startStreaming(trimmed);
   };
 
+  const handleRetry = (query: string) => {
+    setFormError(null);
+    void startStreaming(query);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <Header user={user} errorMessage={formError} />
-      <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
-        <div className="flex-1 overflow-y-auto rounded-lg bg-white p-6 shadow">
+      <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6" role="main">
+        <div
+          className="flex-1 overflow-y-auto rounded-lg bg-white p-6 shadow"
+          role="log"
+          aria-label="チャットメッセージ"
+          aria-live="polite"
+          aria-atomic="false"
+        >
           {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-gray-400">
+            <div className="flex h-full items-center justify-center text-gray-400" role="status">
               最初の質問を入力してください。
             </div>
           ) : (
-            messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))
+            <div role="list">
+              {messages.map((message) => (
+                <div key={message.id} role="listitem">
+                  <ChatMessage message={message} onRetry={handleRetry} />
+                </div>
+              ))}
+            </div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} aria-hidden="true" />
         </div>
 
         <div className="mt-4 rounded-lg bg-white p-4 shadow">
@@ -494,27 +524,41 @@ export default function Chat() {
             method="post"
             className="flex flex-col gap-3 md:flex-row"
             onSubmit={handleSubmit}
+            aria-label="メッセージ送信フォーム"
           >
             <input
               type="hidden"
               name="conversation_id"
               value={conversationId}
             />
+            <label htmlFor="chat-query" className="sr-only">
+              メッセージ入力
+            </label>
             <textarea
+              id="chat-query"
               name="query"
               rows={2}
               className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="社内規則やマニュアルについて質問してください…"
               disabled={isStreaming}
+              aria-label="メッセージ入力欄"
+              aria-describedby={formError ? "form-error" : undefined}
+              aria-invalid={!!formError}
             />
             <button
               type="submit"
               className="rounded bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isStreaming}
+              aria-label={isStreaming ? "送信中" : "メッセージを送信"}
             >
               {isStreaming ? "送信中…" : "送信"}
             </button>
           </Form>
+          {formError && (
+            <div id="form-error" className="mt-2 text-sm text-red-600" role="alert" aria-live="polite">
+              {formError}
+            </div>
+          )}
         </div>
       </main>
     </div>

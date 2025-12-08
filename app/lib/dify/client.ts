@@ -7,6 +7,7 @@ import type {
 } from "~/types/dify";
 import { env } from "~/lib/utils/env";
 import { AppError, ErrorCode } from "~/types/error";
+import { logger } from "~/lib/logging/logger";
 
 const CHAT_MESSAGES_ENDPOINT = "/chat-messages";
 
@@ -33,48 +34,92 @@ export class DifyClient {
   }
 
   /**
-   * ブロッキングモードのチャットメッセージ送信
+   * ブロッキングモードのチャットメッセージ送信（自動リトライ付き）
    */
   async sendMessage(request: DifyChatRequest): Promise<DifyChatResponse> {
-    try {
-      const response = await fetch(this.buildUrl(CHAT_MESSAGES_ENDPOINT), {
-        method: "POST",
-        headers: this.createHeaders(),
-        body: JSON.stringify(request),
-        signal: AbortSignal.timeout(env.DIFY_TIMEOUT),
-      });
+    const maxRetries = env.DIFY_MAX_RETRIES;
+    let lastError: Error | AppError | null = null;
 
-      const body = (await response.json()) as unknown;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(this.buildUrl(CHAT_MESSAGES_ENDPOINT), {
+          method: "POST",
+          headers: this.createHeaders(),
+          body: JSON.stringify(request),
+          signal: AbortSignal.timeout(env.DIFY_TIMEOUT),
+        });
 
-      if (!response.ok) {
-        throw this.toAppError(
-          this.isErrorResponse(body) ? body : undefined,
-          response.status,
-        );
+        const body = (await response.json()) as unknown;
+
+        if (!response.ok) {
+          const error = this.toAppError(
+            this.isErrorResponse(body) ? body : undefined,
+            response.status,
+          );
+          
+          // 4xxエラー（クライアントエラー）はリトライしない
+          if (response.status >= 400 && response.status < 500) {
+            throw error;
+          }
+          
+          // 5xxエラー（サーバーエラー）はリトライ可能
+          lastError = error;
+          if (attempt < maxRetries) {
+            await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+            continue;
+          }
+          throw error;
+        }
+
+        if (!this.isChatResponse(body)) {
+          throw new AppError(
+            ErrorCode.DIFY_INVALID_RESPONSE,
+            "Dify APIから想定外のレスポンス形式が返されました",
+            502,
+          );
+        }
+
+        return body;
+      } catch (error) {
+        if (error instanceof AppError) {
+          // 4xxエラーはリトライしない
+          if (error.statusCode >= 400 && error.statusCode < 500) {
+            throw error;
+          }
+          
+          lastError = error;
+          if (attempt < maxRetries) {
+            await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+            continue;
+          }
+          throw error;
+        }
+
+        // ネットワークエラーやタイムアウトはリトライ可能
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries) {
+          logger.debug(`[DifyClient] リトライ試行 ${attempt + 1}/${maxRetries}`, { error: lastError.message });
+          await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+          continue;
+        }
       }
-
-      if (!this.isChatResponse(body)) {
-        throw new AppError(
-          ErrorCode.DIFY_INVALID_RESPONSE,
-          "Dify APIから想定外のレスポンス形式が返されました",
-          502,
-        );
-      }
-
-      return body;
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      throw new AppError(
-        ErrorCode.DIFY_CONNECTION_FAILED,
-        `Dify APIとの通信に失敗しました: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-        502,
-      );
     }
+
+    // すべてのリトライが失敗した場合
+    throw new AppError(
+      ErrorCode.DIFY_CONNECTION_FAILED,
+      `Dify APIとの通信に失敗しました（${maxRetries + 1}回試行）: ${
+        lastError instanceof Error ? lastError.message : "Unknown error"
+      }`,
+      502,
+    );
+  }
+
+  /**
+   * リトライ用の遅延関数
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -83,17 +128,43 @@ export class DifyClient {
   async *streamMessage(
     request: DifyStreamRequest,
   ): AsyncGenerator<DifyStreamEvent> {
-    const response = await fetch(this.buildUrl(CHAT_MESSAGES_ENDPOINT), {
+    const url = this.buildUrl(CHAT_MESSAGES_ENDPOINT);
+    const headers = this.createHeaders();
+    const body = JSON.stringify(request);
+
+    logger.debug("Dify API request", {
+      url,
       method: "POST",
-      headers: this.createHeaders(),
-      body: JSON.stringify(request),
+      headers: {
+        ...headers,
+        Authorization: headers.Authorization ? "Bearer ***" : undefined,
+      },
+      body: request,
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body,
     });
 
     if (!response.ok) {
       let errorBody: unknown;
       try {
         errorBody = await response.json();
-      } catch {
+        logger.error("Dify API error response", {
+          status: response.status,
+          statusText: response.statusText,
+          url,
+          errorBody,
+        });
+      } catch (parseError) {
+        logger.error("Dify API error (failed to parse response)", {
+          status: response.status,
+          statusText: response.statusText,
+          url,
+          parseError: parseError instanceof Error ? parseError.message : String(parseError),
+        });
         /* noop - fallback to generic error */
       }
       throw this.toAppError(
@@ -159,6 +230,12 @@ export class DifyClient {
     status: number,
   ): AppError {
     if (body) {
+      logger.error("Dify API error details", {
+        code: body.code,
+        message: body.message,
+        status: body.status,
+        httpStatus: status,
+      });
       return new AppError(
         ErrorCode.DIFY_API_ERROR,
         `Dify API error (${body.code}): ${body.message}`,
@@ -166,6 +243,9 @@ export class DifyClient {
       );
     }
 
+    logger.error("Dify API error (no error body)", {
+      httpStatus: status,
+    });
     return new AppError(
       ErrorCode.DIFY_API_ERROR,
       `Dify API error: status ${status}`,

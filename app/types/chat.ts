@@ -23,6 +23,8 @@ export interface Message {
   isComplete?: boolean;
   /** エラー情報 */
   error?: string;
+  /** リトライ用のクエリ（エラー時に使用） */
+  retryQuery?: string;
 }
 
 /**

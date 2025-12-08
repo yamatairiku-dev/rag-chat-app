@@ -1,0 +1,104 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run typecheck
+        run: npm run typecheck
+        
+      - name: Run unit tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          ENTRA_CLIENT_ID: 00000000-0000-0000-0000-000000000000
+          ENTRA_CLIENT_SECRET: test-client-secret
+          ENTRA_TENANT_ID: 00000000-0000-0000-0000-000000000001
+          ENTRA_REDIRECT_URI: http://localhost:3000/auth
+          ENTRA_POST_LOGOUT_REDIRECT_URI: http://localhost:3000
+          DIFY_API_URL: https://api.dify.ai
+          DIFY_API_KEY: app-test-api-key-for-testing
+          SESSION_SECRET: test-session-secret-at-least-32-chars
+          
+      - name: Run unit tests with coverage
+        run: npm run test -- --coverage
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          ENTRA_CLIENT_ID: 00000000-0000-0000-0000-000000000000
+          ENTRA_CLIENT_SECRET: test-client-secret
+          ENTRA_TENANT_ID: 00000000-0000-0000-0000-000000000001
+          ENTRA_REDIRECT_URI: http://localhost:3000/auth
+          ENTRA_POST_LOGOUT_REDIRECT_URI: http://localhost:3000
+          DIFY_API_URL: https://api.dify.ai
+          DIFY_API_KEY: app-test-api-key-for-testing
+          SESSION_SECRET: test-session-secret-at-least-32-chars
+          
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        if: success() || failure()
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          ENTRA_CLIENT_ID: 00000000-0000-0000-0000-000000000000
+          ENTRA_CLIENT_SECRET: test-client-secret
+          ENTRA_TENANT_ID: 00000000-0000-0000-0000-000000000001
+          ENTRA_REDIRECT_URI: http://localhost:3000/auth
+          ENTRA_POST_LOGOUT_REDIRECT_URI: http://localhost:3000
+          DIFY_API_URL: https://api.dify.ai
+          DIFY_API_KEY: app-test-api-key-for-testing
+          SESSION_SECRET: test-session-secret-at-least-32-chars
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          PORT: 3000
+          ENTRA_CLIENT_ID: 00000000-0000-0000-0000-000000000000
+          ENTRA_CLIENT_SECRET: test-client-secret
+          ENTRA_TENANT_ID: 00000000-0000-0000-0000-000000000001
+          ENTRA_REDIRECT_URI: http://localhost:3000/auth
+          ENTRA_POST_LOGOUT_REDIRECT_URI: http://localhost:3000
+          DIFY_API_URL: https://api.dify.ai
+          DIFY_API_KEY: app-test-api-key-for-testing
+          SESSION_SECRET: test-session-secret-at-least-32-chars
+          
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage/coverage-final.json
+          fail_ci_if_error: false
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+

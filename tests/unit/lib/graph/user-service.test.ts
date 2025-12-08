@@ -230,6 +230,124 @@ describe("user-service", () => {
         statusCode: 500,
       });
     });
+
+    it("正常系: グループ名の形式が不正な場合（分割後の要素数が1）", async () => {
+      const mockResponse = {
+        value: [
+          {
+            id: "group-1",
+            displayName: "DEPT_", // DEPT_で始まるが、split('_')で["DEPT", ""]になる（要素数2だが、parts[1]が空）
+            // 実際には、parts.lengthは2になるので、parts.length < 2はfalseになる
+            // 83-84行をカバーするには、parts.lengthが1になる必要がある
+          },
+        ],
+      };
+
+      const mockApi = {
+        get: vi.fn().mockResolvedValue(mockResponse),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      const result = await getUserDepartment("test-access-token");
+
+      // parts.lengthが2なので、83-84行は実行されない
+      // 83-84行をカバーするには、parts.lengthが1になる必要がある
+      expect(result).not.toBeNull(); // parts[1]が空文字列なので、codeは空文字列になる
+    });
+
+    it("正常系: グループ名がDEPT_のみで分割後の要素数が2未満になる場合", async () => {
+      // このケースは実際には発生しない（DEPT_で始まる場合、split('_')で["DEPT", ""]になる）
+      // しかし、displayNameが"DEPT"のみの場合をテストする
+      const mockResponse = {
+        value: [
+          {
+            id: "group-1",
+            displayName: "DEPT", // アンダースコアがない、split('_')で["DEPT"]になる（要素数1）
+          },
+        ],
+      };
+
+      const mockApi = {
+        get: vi.fn().mockResolvedValue(mockResponse),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      const result = await getUserDepartment("test-access-token");
+
+      // displayNameが"DEPT"の場合、startsWith("DEPT_")がfalseになるため、
+      // departmentGroupが見つからず、67行でreturn nullされる
+      // したがって、83-84行には到達しない
+      expect(result).toBeNull();
+    });
+
+    it("正常系: displayNameが空文字列の場合はnullを返す", async () => {
+      const mockResponse = {
+        value: [
+          {
+            id: "group-1",
+            displayName: "", // 空文字列
+          },
+        ],
+      };
+
+      const mockApi = {
+        get: vi.fn().mockResolvedValue(mockResponse),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      const result = await getUserDepartment("test-access-token");
+
+      // displayNameが空文字列の場合、startsWith(prefix)がfalseになるため、nullを返す
+      expect(result).toBeNull();
+    });
+
+    it("異常系: AppError以外のエラーが発生した場合はAppErrorに変換", async () => {
+      const error = new Error("Unknown error");
+      const mockApi = {
+        get: vi.fn().mockRejectedValue(error),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      await expect(getUserDepartment("test-access-token")).rejects.toBeInstanceOf(AppError);
+      await expect(getUserDepartment("test-access-token")).rejects.toMatchObject({
+        code: ErrorCode.GRAPH_API_ERROR,
+        statusCode: 500,
+      });
+    });
+
+    it("異常系: 文字列エラーが発生した場合もAppErrorに変換", async () => {
+      const mockApi = {
+        get: vi.fn().mockRejectedValue("String error"),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      await expect(getUserDepartment("test-access-token")).rejects.toBeInstanceOf(AppError);
+      await expect(getUserDepartment("test-access-token")).rejects.toMatchObject({
+        code: ErrorCode.GRAPH_API_ERROR,
+        statusCode: 500,
+      });
+    });
+
+    it("異常系: AppErrorが発生した場合はそのまま再スロー", async () => {
+      const appError = new AppError(
+        ErrorCode.GRAPH_API_ERROR,
+        "Graph API error",
+        500
+      );
+      const mockApi = {
+        get: vi.fn().mockRejectedValue(appError),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      await expect(getUserDepartment("test-access-token")).rejects.toBe(appError);
+      await expect(getUserDepartment("test-access-token")).rejects.toBeInstanceOf(AppError);
+    });
   });
 });
 

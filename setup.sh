@@ -116,7 +116,6 @@ if [ ! -f package.json ]; then
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@azure/msal-node": "^2.14.0",
     "winston": "^3.14.0",
-    "express-session": "^1.18.0",
     "zod": "^3.23.8",
     "react-markdown": "^9.0.0",
     "remark-gfm": "^4.0.0",
