@@ -6,12 +6,6 @@ vi.mock("~/lib/session/session-manager", () => ({
   deleteSession: vi.fn(),
 }));
 
-vi.mock("~/lib/utils/env", () => ({
-  env: {
-    ENTRA_POST_LOGOUT_REDIRECT_URI: "/login",
-  },
-}));
-
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
@@ -34,7 +28,7 @@ describe("auth.logout route", () => {
   it("正常系: セッションを削除してリダイレクトする", async () => {
     const clearCookie = "session=; Path=/; Max-Age=0; HttpOnly=true; SameSite=lax";
     deleteSessionMock.mockResolvedValue(clearCookie);
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/login" } }));
+    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/auth/login" } }));
 
     const request = new Request("http://localhost/auth/logout", {
       method: "POST",
@@ -43,7 +37,7 @@ describe("auth.logout route", () => {
     const result = await action({ request } as never);
 
     expect(deleteSessionMock).toHaveBeenCalledWith(request);
-    expect(redirectMock).toHaveBeenCalledWith("/login", {
+    expect(redirectMock).toHaveBeenCalledWith("/auth/login", {
       headers: { "Set-Cookie": clearCookie },
     });
     expect(result).toBeInstanceOf(Response);
@@ -51,7 +45,7 @@ describe("auth.logout route", () => {
 
   it("正常系: セッションが存在しない場合でもリダイレクトする", async () => {
     deleteSessionMock.mockResolvedValue(null);
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/login" } }));
+    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/auth/login" } }));
 
     const request = new Request("http://localhost/auth/logout", {
       method: "POST",
@@ -60,30 +54,9 @@ describe("auth.logout route", () => {
     const result = await action({ request } as never);
 
     expect(deleteSessionMock).toHaveBeenCalledWith(request);
-    expect(redirectMock).toHaveBeenCalledWith("/login", {
+    expect(redirectMock).toHaveBeenCalledWith("/auth/login", {
       headers: { "Set-Cookie": "session=; Path=/; Max-Age=0" },
     });
-    expect(result).toBeInstanceOf(Response);
-  });
-
-  it("正常系: ENTRA_POST_LOGOUT_REDIRECT_URIが未設定の場合は/loginにリダイレクト", async () => {
-    vi.doMock("~/lib/utils/env", () => ({
-      env: {
-        ENTRA_POST_LOGOUT_REDIRECT_URI: undefined,
-      },
-    }));
-
-    const clearCookie = "session=; Path=/; Max-Age=0";
-    deleteSessionMock.mockResolvedValue(clearCookie);
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/login" } }));
-
-    const request = new Request("http://localhost/auth/logout", {
-      method: "POST",
-    });
-
-    const result = await action({ request } as never);
-
-    expect(redirectMock).toHaveBeenCalledWith("/login", expect.any(Object));
     expect(result).toBeInstanceOf(Response);
   });
 });

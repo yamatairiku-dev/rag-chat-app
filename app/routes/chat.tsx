@@ -83,7 +83,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       }
     }
 
-    return Response.json<LoaderData>({
+    const data: LoaderData = {
       user: {
         displayName: session.displayName,
         userEmail: session.userEmail,
@@ -92,7 +92,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       },
       conversationId,
       initialMessages,
-    });
+    };
+    return Response.json(data);
   } catch (error) {
     logger.error("セッション取得エラー", { error });
     return redirect("/auth/login");

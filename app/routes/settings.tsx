@@ -15,14 +15,15 @@ type LoaderData = {
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await requireUserSession(request);
 
-  return Response.json<LoaderData>({
+  const data: LoaderData = {
     user: {
       displayName: session.displayName,
       userEmail: session.userEmail,
       departmentCode: session.departmentCode,
       departmentName: session.departmentName,
     },
-  });
+  };
+  return Response.json(data);
 }
 
 export default function Settings() {

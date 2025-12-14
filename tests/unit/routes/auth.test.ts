@@ -65,13 +65,17 @@ describe("auth route", () => {
     const tokens = {
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
+      idToken: "test-id-token",
       expiresIn: 3600,
     };
     const userInfo = {
       id: "user-123",
       displayName: "Test User",
+      givenName: "Test",
+      surname: "User",
       mail: "test@example.com",
       userPrincipalName: "test@example.com",
+      businessPhones: [],
     };
     const department = {
       code: "001",
@@ -105,13 +109,17 @@ describe("auth route", () => {
     const tokens = {
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
+      idToken: "test-id-token",
       expiresIn: 3600,
     };
     const userInfo = {
       id: "user-123",
       displayName: "Test User",
+      givenName: "Test",
+      surname: "User",
       mail: "test@example.com",
       userPrincipalName: "test@example.com",
+      businessPhones: [],
     };
 
     exchangeCodeForTokensMock.mockResolvedValue(tokens);
@@ -176,13 +184,17 @@ describe("auth route", () => {
     const tokens = {
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
+      idToken: "test-id-token",
       expiresIn: 3600,
     };
     const userInfo = {
       id: "user-123",
       displayName: "Test User",
+      givenName: "Test",
+      surname: "User",
       mail: "mail@example.com",
       userPrincipalName: "principal@example.com",
+      businessPhones: [],
     };
     const department = {
       code: "001",
@@ -211,13 +223,17 @@ describe("auth route", () => {
     const tokens = {
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
+      idToken: "test-id-token",
       expiresIn: 3600,
     };
     const userInfo = {
       id: "user-123",
       displayName: "Test User",
-      mail: undefined,
+      givenName: "Test",
+      surname: "User",
+      mail: "",
       userPrincipalName: "principal@example.com",
+      businessPhones: [],
     };
     const department = {
       code: "001",

@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import type { Request } from "@react-router/node";
 import { AppError, ErrorCode } from "~/types/error";
 
 vi.mock("~/lib/utils/env", () => ({

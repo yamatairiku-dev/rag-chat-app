@@ -22,7 +22,7 @@ export class DifyClient {
     private readonly apiKey: string = env.DIFY_API_KEY,
   ) {}
 
-  private createHeaders(): HeadersInit {
+  private createHeaders(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",

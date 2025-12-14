@@ -23,7 +23,9 @@ describe("logger", () => {
 
   it("正常系: errorレベルのログはファイルに出力される", () => {
     const errorTransport = logger.transports.find(
-      (t) => t instanceof winston.transports.File && (t as winston.transports.FileTransport).level === "error"
+      (t) =>
+        t instanceof winston.transports.File &&
+        (t as winston.transports.FileTransportInstance).level === "error"
     );
     
     expect(errorTransport).toBeDefined();
@@ -31,7 +33,9 @@ describe("logger", () => {
 
   it("正常系: すべてのレベルのログはファイルに出力される", () => {
     const combinedTransport = logger.transports.find(
-      (t) => t instanceof winston.transports.File && !(t as winston.transports.FileTransport).level
+      (t) =>
+        t instanceof winston.transports.File &&
+        !(t as winston.transports.FileTransportInstance).level
     );
     
     expect(combinedTransport).toBeDefined();

@@ -1,4 +1,3 @@
-import { json } from "react-router";
 import { AppError, ErrorCode } from "~/types/error";
 import { logger } from "~/lib/logging/logger";
 
@@ -11,7 +10,7 @@ export function handleError(error: unknown) {
       stack: error.stack,
     });
 
-    return json(
+    return Response.json(
       {
         error: {
           code: error.code,
@@ -29,7 +28,7 @@ export function handleError(error: unknown) {
       stack: error.stack,
     });
 
-    return json(
+    return Response.json(
       {
         error: {
           code: ErrorCode.INTERNAL_SERVER_ERROR,
@@ -43,7 +42,7 @@ export function handleError(error: unknown) {
 
   logger.error("Unknown Error", { error });
 
-  return json(
+  return Response.json(
     {
       error: {
         code: ErrorCode.INTERNAL_SERVER_ERROR,

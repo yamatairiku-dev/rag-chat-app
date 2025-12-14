@@ -36,7 +36,10 @@ Element.prototype.scrollIntoView = vi.fn();
 
 import { ConversationManager } from "~/lib/chat/conversation-manager";
 
-const ConversationManagerMock = vi.mocked(ConversationManager);
+const getConversationIdMock =
+  ConversationManager.getConversationId as unknown as ReturnType<typeof vi.fn>;
+const setConversationIdMock =
+  ConversationManager.setConversationId as unknown as ReturnType<typeof vi.fn>;
 
 describe("chat route meta", () => {
   it("正常系: メタデータを正しく返す", () => {
@@ -55,7 +58,7 @@ describe("chat route meta", () => {
 describe("Chat component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    ConversationManagerMock.getConversationId.mockReturnValue(null);
+    getConversationIdMock.mockReturnValue(null);
     vi.mocked(global.fetch).mockClear();
   });
 
@@ -162,12 +165,12 @@ describe("Chat component", () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(ConversationManagerMock.setConversationId).toHaveBeenCalledWith("conv-123");
+      expect(setConversationIdMock).toHaveBeenCalledWith("conv-123");
     });
   });
 
   it("正常系: conversationIdがなく、保存されたIDがある場合は設定される", async () => {
-    ConversationManagerMock.getConversationId.mockReturnValue("stored-conv-1");
+    getConversationIdMock.mockReturnValue("stored-conv-1");
 
     const router = createMemoryRouter(
       [
@@ -186,7 +189,7 @@ describe("Chat component", () => {
 
     // 保存されたIDが使用されることを確認
     await waitFor(() => {
-      expect(ConversationManagerMock.getConversationId).toHaveBeenCalled();
+      expect(getConversationIdMock).toHaveBeenCalled();
     });
   });
 
@@ -207,7 +210,18 @@ describe("Chat component", () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("社内規則やマニュアルについて質問してください…")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
     }, { timeout: 3000 });
 
     await waitFor(() => {
@@ -271,7 +285,9 @@ describe("Chat component", () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("社内規則やマニュアルについて質問してください…")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
     });
 
     // ストリーミング開始のシミュレーション
@@ -312,7 +328,9 @@ describe("Chat component", () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("社内規則やマニュアルについて質問してください…")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
     });
 
     // ストリーミング処理の準備ができていることを確認
@@ -347,7 +365,9 @@ describe("Chat component", () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("社内規則やマニュアルについて質問してください…")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/社内規則やマニュアルについて質問してください/),
+      ).toBeInTheDocument();
     });
 
     // エラーハンドリングの準備ができていることを確認

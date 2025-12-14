@@ -47,7 +47,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, limit);
 
-  return Response.json<LoaderData>({
+  const data: LoaderData = {
     user: {
       displayName: session.displayName,
       userEmail: session.userEmail,
@@ -55,7 +55,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       departmentName: session.departmentName,
     },
     conversations,
-  });
+  };
+  return Response.json(data);
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -66,41 +67,36 @@ export async function action({ request }: Route.ActionArgs) {
   const conversationId = (formData.get("conversation_id") as string | null)?.trim();
 
   if (!conversationId) {
-    return Response.json<ActionData>(
-      {
-        success: false,
-        error: "会話IDが指定されていません。",
-      },
-      { status: 400 },
-    );
+    const data: ActionData = {
+      success: false,
+      error: "会話IDが指定されていません。",
+    };
+    return Response.json(data, { status: 400 });
   }
 
   if (intent === "delete") {
     const existing = await getConversation(conversationId);
     if (!existing || existing.userId !== session.userId) {
-      return Response.json<ActionData>(
-        {
-          success: false,
-          error: "会話が見つかりません。",
-        },
-        { status: 404 },
-      );
+      const data: ActionData = {
+        success: false,
+        error: "会話が見つかりません。",
+      };
+      return Response.json(data, { status: 404 });
     }
 
     await deleteConversation(conversationId);
 
-    return Response.json<ActionData>({
+    const data: ActionData = {
       success: true,
-    });
+    };
+    return Response.json(data);
   }
 
-  return Response.json<ActionData>(
-    {
-      success: false,
-      error: "無効なアクションです。",
-    },
-    { status: 400 },
-  );
+  const data: ActionData = {
+    success: false,
+    error: "無効なアクションです。",
+  };
+  return Response.json(data, { status: 400 });
 }
 
 export default function Conversations() {
