@@ -87,7 +87,7 @@ describe("auth route", () => {
 
     exchangeCodeForTokensMock.mockResolvedValue(tokens);
     getUserInfoMock.mockResolvedValue(userInfo);
-    getUserDepartmentMock.mockResolvedValue(department);
+    getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
     redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
 
@@ -124,7 +124,7 @@ describe("auth route", () => {
 
     exchangeCodeForTokensMock.mockResolvedValue(tokens);
     getUserInfoMock.mockResolvedValue(userInfo);
-    getUserDepartmentMock.mockResolvedValue(null);
+    getUserDepartmentMock.mockResolvedValue([]);
 
     const request = new Request(`http://localhost/auth?code=${code}`);
     const response = await loader({ request } as never);
@@ -206,7 +206,7 @@ describe("auth route", () => {
 
     exchangeCodeForTokensMock.mockResolvedValue(tokens);
     getUserInfoMock.mockResolvedValue(userInfo);
-    getUserDepartmentMock.mockResolvedValue(department);
+    getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
     redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
 
@@ -245,7 +245,7 @@ describe("auth route", () => {
 
     exchangeCodeForTokensMock.mockResolvedValue(tokens);
     getUserInfoMock.mockResolvedValue(userInfo);
-    getUserDepartmentMock.mockResolvedValue(department);
+    getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
     redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
 

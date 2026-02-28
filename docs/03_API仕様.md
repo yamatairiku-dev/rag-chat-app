@@ -396,28 +396,28 @@ interface MemberOfResponse {
   value: Array<{
     '@odata.type': '#microsoft.graph.group';
     id: string;                  // Group Object ID
-    displayName: string;         // グループ名 (例: DEPT_001_営業部)
+    displayName: string;         // グループ名（表示名。形式は任意）
     description?: string;        // グループの説明
     mail?: string;               // グループメールアドレス
   }>;
 }
 ```
 
-#### 使用例（所属コード抽出）
+#### 使用例（所属情報の取得）
 
 ```typescript
-// グループ名から所属コードを抽出
-// 例: "DEPT_001_営業部" → "001"
+// 正規表現に一致するグループを部署として採用
 const groups = response.value;
-const prefix = process.env.GRAPH_DEPARTMENT_GROUP_PREFIX; // "DEPT_"
+const pattern = process.env.GRAPH_DEPARTMENT_GROUP_PREFIX; // 例: "^ZA[A-Za-z]\\d{3}-[A-Za-z]"
+const departmentRegex = new RegExp(pattern);
 
-const departmentGroup = groups.find(g => 
-  g.displayName.startsWith(prefix)
+const departmentGroup = groups.find(g =>
+  g.displayName && departmentRegex.test(g.displayName)
 );
 
 if (departmentGroup) {
-  const parts = departmentGroup.displayName.split('_');
-  const departmentCode = parts[1]; // "001"
+  const departmentCode = departmentGroup.id;   // グループの Object ID
+  const departmentName = departmentGroup.displayName; // 表示名をそのまま使用
 }
 ```
 

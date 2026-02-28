@@ -11,11 +11,11 @@ export interface UserSession {
   /** 表示名 (例: 田中 太郎) */
   displayName: string;
   
-  /** 所属コード (例: 001, 002) */
-  departmentCode: string;
-  
-  /** 所属部署名 (例: 営業部) */
-  departmentName?: string;
+  /** 所属コードの配列（グループ ID のリスト） */
+  departmentCodes: string[];
+
+  /** 所属部署名の配列（表示名のリスト） */
+  departmentNames: string[];
   
   /** Microsoft Graph Access Token */
   accessToken: string;

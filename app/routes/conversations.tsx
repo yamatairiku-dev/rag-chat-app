@@ -13,8 +13,8 @@ type LoaderData = {
   user: {
     displayName: string;
     userEmail: string;
-    departmentCode: string;
-    departmentName?: string;
+    departmentCodes: string[];
+    departmentNames: string[];
   };
   conversations: ConversationRecord[];
 };
@@ -51,8 +51,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     user: {
       displayName: session.displayName,
       userEmail: session.userEmail,
-      departmentCode: session.departmentCode,
-      departmentName: session.departmentName,
+      departmentCodes: session.departmentCodes,
+      departmentNames: session.departmentNames,
     },
     conversations,
   };

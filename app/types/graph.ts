@@ -45,7 +45,7 @@ export interface GraphGroup {
   /** Group Object ID */
   id: string;
   
-  /** グループ名 (例: DEPT_001_営業部) */
+  /** グループ名（表示名。形式は任意） */
   displayName: string;
   
   /** グループの説明 */
@@ -67,16 +67,16 @@ export interface MemberOfResponse {
  * 所属部署情報
  */
 export interface DepartmentInfo {
-  /** 所属コード (例: 001) */
+  /** 所属コード（グループの Object ID） */
   code: string;
   
-  /** 部署名 (例: 営業部) */
+  /** 部署名（グループの表示名） */
   name: string;
   
   /** グループID */
   groupId: string;
   
-  /** グループ名 (例: DEPT_001_営業部) */
+  /** グループ名（表示名） */
   groupName: string;
 }
 

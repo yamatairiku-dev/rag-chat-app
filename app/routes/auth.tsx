@@ -49,10 +49,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     });
 
     console.log("[認証コールバック] ステップ3: 所属部署取得開始");
-    // 3. 所属部署取得
-    const department = await getUserDepartment(tokens.accessToken);
+    // 3. 所属部署取得（正規表現にマッチするすべてを配列で取得）
+    const departments = await getUserDepartment(tokens.accessToken);
 
-    if (!department) {
+    if (departments.length === 0) {
       console.error("[認証コールバック] 所属部署が見つかりません");
       console.error("[認証コールバック] 詳細は上記の[所属部署取得]ログを確認してください");
       throw new AppError(
@@ -61,11 +61,10 @@ export async function loader({ request }: Route.LoaderArgs) {
         403
       );
     }
-    console.log("[認証コールバック] ステップ3: 所属部署取得完了", { 
-      code: department.code,
-      name: department.name,
-      groupId: department.groupId,
-      groupName: department.groupName
+    console.log("[認証コールバック] ステップ3: 所属部署取得完了", {
+      count: departments.length,
+      codes: departments.map((d) => d.code),
+      names: departments.map((d) => d.name),
     });
 
     console.log("[認証コールバック] ステップ4: セッション作成開始");
@@ -74,8 +73,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       userId: userInfo.id,
       userEmail: userInfo.mail || userInfo.userPrincipalName,
       displayName: userInfo.displayName,
-      departmentCode: department.code,
-      departmentName: department.name,
+      departmentCodes: departments.map((d) => d.code),
+      departmentNames: departments.map((d) => d.name),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       tokenExpiresAt: Date.now() + tokens.expiresIn * 1000,

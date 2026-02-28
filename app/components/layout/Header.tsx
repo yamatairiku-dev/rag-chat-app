@@ -5,8 +5,8 @@ import { Button } from "~/components/ui/button";
 interface HeaderUser {
   displayName: string;
   userEmail: string;
-  departmentCode: string;
-  departmentName?: string;
+  departmentCodes: string[];
+  departmentNames: string[];
 }
 
 interface HeaderProps {
@@ -29,6 +29,14 @@ function getInitials(displayName: string): string {
   return letters.toUpperCase().slice(0, 2);
 }
 
+function formatDepartments(names: string[], codes: string[]): string {
+  if (names.length === 0 && codes.length === 0) return "未設定";
+  if (names.length > 0) {
+    return names.map((n, i) => (codes[i] ? `${n} (${codes[i]})` : n)).join(" / ");
+  }
+  return codes.join(", ");
+}
+
 export function Header({ user, errorMessage }: HeaderProps) {
   const initials = getInitials(user.displayName);
 
@@ -37,10 +45,8 @@ export function Header({ user, errorMessage }: HeaderProps) {
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <div>
           <h1 className="text-xl font-bold">社内RAG検索チャットボット</h1>
-          <p className="text-xs text-gray-500" aria-label={`所属: ${user.departmentName || user.departmentCode}, ユーザー: ${user.displayName}`}>
-            {user.departmentName
-              ? `${user.departmentName} (${user.departmentCode})`
-              : user.departmentCode}{" "}
+          <p className="text-xs text-gray-500" aria-label={`所属: ${formatDepartments(user.departmentNames, user.departmentCodes)}, ユーザー: ${user.displayName}`}>
+            {formatDepartments(user.departmentNames, user.departmentCodes)}{" "}
             / {user.displayName}
           </p>
           <p className="text-xs text-gray-400" aria-label={`メールアドレス: ${user.userEmail}`}>
@@ -50,7 +56,7 @@ export function Header({ user, errorMessage }: HeaderProps) {
         <div className="flex items-center gap-4">
           <div className="text-right text-xs" aria-label="ユーザー情報">
             <p className="font-medium">{user.displayName}</p>
-            <p className="text-gray-500">{user.departmentCode}</p>
+            <p className="text-gray-500">{formatDepartments(user.departmentNames, user.departmentCodes)}</p>
           </div>
           <Avatar aria-label={`${user.displayName}のアバター`}>
             <AvatarFallback aria-hidden="true">{initials}</AvatarFallback>

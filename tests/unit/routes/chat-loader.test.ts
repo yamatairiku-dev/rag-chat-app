@@ -58,8 +58,8 @@ const baseSession: UserSession = {
   userId: "user-123",
   userEmail: "test@example.com",
   displayName: "テストユーザー",
-  departmentCode: "001",
-  departmentName: "テスト部署",
+  departmentCodes: ["001"],
+  departmentNames: ["テスト部署"],
   accessToken: "test-access-token",
   refreshToken: "test-refresh-token",
   tokenExpiresAt: Date.now() + 3600000,
@@ -91,7 +91,8 @@ describe("chat route loader", () => {
     expect(data.user).toMatchObject({
       displayName: baseSession.displayName,
       userEmail: baseSession.userEmail,
-      departmentCode: baseSession.departmentCode,
+      departmentCodes: baseSession.departmentCodes,
+      departmentNames: baseSession.departmentNames,
     });
   });
 
@@ -135,7 +136,7 @@ describe("chat route loader", () => {
     const conversation = {
       conversationId: "conv-1",
       userId: "user-123",
-      departmentCode: "001",
+      departmentCodes: ["001"],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [
@@ -177,7 +178,7 @@ describe("chat route loader", () => {
     const conversation = {
       conversationId: "conv-1",
       userId: "other-user",
-      departmentCode: "001",
+      departmentCodes: ["001"],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [],
@@ -245,7 +246,7 @@ describe("chat route loader", () => {
     const conversation = {
       conversationId: "conv-1",
       userId: "user-123",
-      departmentCode: "001",
+      departmentCodes: ["001"],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [

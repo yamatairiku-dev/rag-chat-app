@@ -56,7 +56,7 @@ async function testDifyConnection() {
   const testRequest = {
     inputs: {
       user_id: "test@example.com",
-      department_code: "001",
+      department_code: ["001"],
     },
     query: "こんにちは",
     response_mode: "streaming" as const,

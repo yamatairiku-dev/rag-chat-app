@@ -1,20 +1,7 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import type { Message } from "~/types/chat";
-import { useState, useEffect } from "react";
+import { Suspense, lazy } from "react";
 
-// スタイルを動的にインポート（Code Splitting）
-let vscDarkPlus: any = null;
-const loadStyle = async () => {
-  if (!vscDarkPlus) {
-    const styleModule = await import(
-      "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus"
-    );
-    vscDarkPlus = styleModule.default;
-  }
-  return vscDarkPlus;
-};
+const MarkdownRenderer = lazy(() => import("./MarkdownRenderer"));
 
 interface ChatMessageProps {
   message: Message;
@@ -23,14 +10,6 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, onRetry }: ChatMessageProps) {
   const isUser = message.role === "user";
-  const [style, setStyle] = useState<any>(null);
-
-  useEffect(() => {
-    // コードブロックがある場合のみスタイルをロード
-    if (message.content.includes("```")) {
-      loadStyle().then(setStyle);
-    }
-  }, [message.content]);
 
   // メッセージの先頭と末尾の空行を削除し、連続する空行を1つにまとめる
   const normalizeContent = (content: string): string => {
@@ -38,36 +17,6 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       .replace(/^\n+/, "") // 先頭の改行を削除
       .replace(/\n+$/, "") // 末尾の改行を削除
       .replace(/\n{3,}/g, "\n\n"); // 3つ以上の連続する改行を2つに統一
-  };
-
-  const createCodeComponent = () => {
-    return ({ node, inline, className, children, ...props }: any) => {
-      if (inline) {
-        return (
-          <code className={className} {...props}>
-            {children}
-          </code>
-        );
-      }
-      const match = /language-(\w+)/.exec(className || "");
-      if (!match || !style) {
-        return (
-          <code className={className} {...props}>
-            {children}
-          </code>
-        );
-      }
-      return (
-        <SyntaxHighlighter
-          style={style}
-          language={match[1]}
-          PreTag="div"
-          {...props}
-        >
-          {String(children).replace(/\n$/, "")}
-        </SyntaxHighlighter>
-      );
-    };
   };
 
   return (
@@ -88,25 +37,25 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
         <div className="leading-relaxed">
           {message.role === "assistant" && message.isStreaming ? (
             <>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code: createCodeComponent(),
-                }}
+              <Suspense
+                fallback={
+                  <span className="text-xs text-gray-400">読み込み中…</span>
+                }
               >
-                {normalizeContent(message.content || "")}
-              </ReactMarkdown>
+                <MarkdownRenderer
+                  content={normalizeContent(message.content || "")}
+                />
+              </Suspense>
               <span className="ml-1 animate-pulse" aria-label="入力中" aria-live="polite">▋</span>
             </>
           ) : (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                code: createCodeComponent(),
-              }}
+            <Suspense
+              fallback={
+                <span className="text-xs text-gray-400">読み込み中…</span>
+              }
             >
-              {normalizeContent(message.content)}
-            </ReactMarkdown>
+              <MarkdownRenderer content={normalizeContent(message.content)} />
+            </Suspense>
           )}
         </div>
         {message.error && (

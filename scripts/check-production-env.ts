@@ -33,7 +33,7 @@ const productionEnvSchema = z.object({
   // Graph API
   GRAPH_API_URL: z.string().url().default('https://graph.microsoft.com/v1.0'),
   GRAPH_API_SCOPE: z.string().default('https://graph.microsoft.com/.default'),
-  GRAPH_DEPARTMENT_GROUP_PREFIX: z.string().default('DEPT_'),
+  GRAPH_DEPARTMENT_GROUP_PREFIX: z.string().default('^ZA[A-Za-z]\\d{3}-[A-Za-z]'),
 
   // Dify
   DIFY_API_URL: z.string().url('Invalid Dify API URL'),

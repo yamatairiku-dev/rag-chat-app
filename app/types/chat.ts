@@ -43,8 +43,8 @@ export interface ChatSession {
   updatedAt: number;
   /** ユーザーID */
   userId: string;
-  /** 所属コード */
-  departmentCode: string;
+  /** 所属コードの配列 */
+  departmentCodes: string[];
 }
 
 /**
@@ -61,7 +61,7 @@ export interface ChatLog {
   userId: string;
   /** ユーザーEmail */
   userEmail: string;
-  /** 所属コード */
+  /** 所属コードの配列（カンマ区切りで記録することも可） */
   departmentCode: string;
   /** ユーザーの質問 */
   query: string;

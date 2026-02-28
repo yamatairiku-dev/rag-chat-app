@@ -33,8 +33,8 @@ describe("api.test-auth route", () => {
         userId: "test-user-123",
         userEmail: "test@example.com",
         displayName: "テストユーザー",
-        departmentCode: "001",
-        departmentName: "テスト部署",
+        departmentCodes: ["001"],
+        departmentNames: ["テスト部署"],
       }),
     });
 
@@ -49,8 +49,8 @@ describe("api.test-auth route", () => {
         userId: "test-user-123",
         userEmail: "test@example.com",
         displayName: "テストユーザー",
-        departmentCode: "001",
-        departmentName: "テスト部署",
+        departmentCodes: ["001"],
+        departmentNames: ["テスト部署"],
       })
     );
   });
@@ -75,8 +75,8 @@ describe("api.test-auth route", () => {
         userId: "test-user-123",
         userEmail: "test@example.com",
         displayName: "テストユーザー",
-        departmentCode: "001",
-        departmentName: "テスト部署",
+        departmentCodes: ["001"],
+        departmentNames: ["テスト部署"],
       })
     );
   });

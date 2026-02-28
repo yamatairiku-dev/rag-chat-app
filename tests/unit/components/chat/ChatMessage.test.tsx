@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { ChatMessage } from "~/components/chat/ChatMessage";
 import type { Message } from "~/types/chat";
 
@@ -11,7 +11,7 @@ describe("ChatMessage", () => {
   };
 
   describe("ユーザーメッセージの表示", () => {
-    it("ユーザーメッセージを正しく表示する", () => {
+    it("ユーザーメッセージを正しく表示する", async () => {
       const message: Message = {
         ...baseMessage,
         role: "user",
@@ -20,7 +20,10 @@ describe("ChatMessage", () => {
 
       render(<ChatMessage message={message} />);
 
-      expect(screen.getByText("これはユーザーのメッセージです")).toBeInTheDocument();
+      // MarkdownRenderer は lazy のため初回は「読み込み中…」→ 続いて本文が表示される
+      await waitFor(() => {
+        expect(screen.getByText("これはユーザーのメッセージです")).toBeInTheDocument();
+      });
     });
 
     it("ユーザーメッセージは右側に配置される", () => {
@@ -51,7 +54,7 @@ describe("ChatMessage", () => {
   });
 
   describe("アシスタントメッセージの表示", () => {
-    it("アシスタントメッセージを正しく表示する", () => {
+    it("アシスタントメッセージを正しく表示する", async () => {
       const message: Message = {
         ...baseMessage,
         role: "assistant",
@@ -60,7 +63,10 @@ describe("ChatMessage", () => {
 
       render(<ChatMessage message={message} />);
 
-      expect(screen.getByText("これはアシスタントのメッセージです")).toBeInTheDocument();
+      // MarkdownRenderer は lazy のため初回は「読み込み中…」→ 続いて本文が表示される
+      await waitFor(() => {
+        expect(screen.getByText("これはアシスタントのメッセージです")).toBeInTheDocument();
+      });
     });
 
     it("アシスタントメッセージは左側に配置される", () => {
@@ -218,7 +224,7 @@ describe("ChatMessage", () => {
   });
 
   describe("Markdownレンダリング", () => {
-    it("Markdown形式のテキストがレンダリングされる", () => {
+    it("Markdown形式のテキストがレンダリングされる", async () => {
       const message: Message = {
         ...baseMessage,
         role: "assistant",
@@ -227,8 +233,10 @@ describe("ChatMessage", () => {
 
       render(<ChatMessage message={message} />);
 
-      // react-markdownがレンダリングするため、テキストが含まれていることを確認
-      expect(screen.getByText(/太字/)).toBeInTheDocument();
+      // lazy の MarkdownRenderer の表示を待つ
+      await waitFor(() => {
+        expect(screen.getByText(/太字/)).toBeInTheDocument();
+      });
     });
 
     it("コードブロックがレンダリングされる", () => {
@@ -265,7 +273,7 @@ describe("ChatMessage", () => {
       expect(screen.getByText("▋")).toBeInTheDocument();
     });
 
-    it("インラインコードがレンダリングされる", () => {
+    it("インラインコードがレンダリングされる", async () => {
       const message: Message = {
         ...baseMessage,
         role: "assistant",
@@ -274,8 +282,10 @@ describe("ChatMessage", () => {
 
       render(<ChatMessage message={message} />);
 
-      // インラインコードがレンダリングされることを確認
-      expect(screen.getByText(/これは/)).toBeInTheDocument();
+      // lazy の MarkdownRenderer の表示を待つ
+      await waitFor(() => {
+        expect(screen.getByText(/これは/)).toBeInTheDocument();
+      });
     });
   });
 });

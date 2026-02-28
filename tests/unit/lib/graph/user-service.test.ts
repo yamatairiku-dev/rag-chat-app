@@ -121,16 +121,17 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      expect(result).not.toBeNull();
-      expect(result?.code).toBe("001");
-      expect(result?.name).toBe("営業部");
-      expect(result?.groupId).toBe("group-1");
-      expect(result?.groupName).toBe("DEPT_001_営業部");
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result[0]?.code).toBe("group-1");
+      expect(result[0]?.name).toBe("DEPT_001_営業部");
+      expect(result[0]?.groupId).toBe("group-1");
+      expect(result[0]?.groupName).toBe("DEPT_001_営業部");
       expect(mockGraphClient.api).toHaveBeenCalledWith("/me/memberOf");
       expect(mockApi.get).toHaveBeenCalled();
     });
 
-    it("正常系: プレフィックスに一致するグループがない場合、nullを返す", async () => {
+    it("正常系: プレフィックスに一致するグループがない場合、空配列を返す", async () => {
       const mockResponse = {
         value: [
           {
@@ -148,10 +149,10 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it("正常系: グループが空の場合、nullを返す", async () => {
+    it("正常系: グループが空の場合、空配列を返す", async () => {
       const mockResponse = {
         value: [],
       };
@@ -164,15 +165,15 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it("正常系: グループ名の形式が不正な場合（コード部分が空）、空のコードを返す", async () => {
+    it("正常系: プレフィックスのみの表示名でもグループIDと表示名をそのまま返す", async () => {
       const mockResponse = {
         value: [
           {
             id: "group-1",
-            displayName: "DEPT_", // コード部分がない（parts.length = 2だが、parts[1]が空）
+            displayName: "DEPT_",
           },
         ],
       };
@@ -185,15 +186,12 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      // 実際の実装では、parts.length < 2の場合にnullを返すが、
-      // "DEPT_"は分割すると["DEPT", ""]となり、lengthは2なのでnullにならない
-      // 実装に合わせて、空のコードが返されることを確認
-      expect(result).not.toBeNull();
-      expect(result?.code).toBe("");
-      expect(result?.name).toBe("");
+      expect(result).toHaveLength(1);
+      expect(result[0]?.code).toBe("group-1");
+      expect(result[0]?.name).toBe("DEPT_");
     });
 
-    it("正常系: 複数のアンダースコアを含むグループ名を正しく処理", async () => {
+    it("正常系: 表示名を分割せずそのまま部署名として返す", async () => {
       const mockResponse = {
         value: [
           {
@@ -211,9 +209,9 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      expect(result).not.toBeNull();
-      expect(result?.code).toBe("001");
-      expect(result?.name).toBe("営業部_東京支社");
+      expect(result).toHaveLength(1);
+      expect(result[0]?.code).toBe("group-1");
+      expect(result[0]?.name).toBe("DEPT_001_営業部_東京支社");
     });
 
     it("異常系: Graph APIエラー時にAppErrorを投げる", async () => {
@@ -231,14 +229,12 @@ describe("user-service", () => {
       });
     });
 
-    it("正常系: グループ名の形式が不正な場合（分割後の要素数が1）", async () => {
+    it("正常系: アンダースコアを含まない表示名もそのまま返す", async () => {
       const mockResponse = {
         value: [
           {
-            id: "group-1",
-            displayName: "DEPT_", // DEPT_で始まるが、split('_')で["DEPT", ""]になる（要素数2だが、parts[1]が空）
-            // 実際には、parts.lengthは2になるので、parts.length < 2はfalseになる
-            // 83-84行をカバーするには、parts.lengthが1になる必要がある
+            id: "group-abc-123",
+            displayName: "DEPT_営業部",
           },
         ],
       };
@@ -251,19 +247,17 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      // parts.lengthが2なので、83-84行は実行されない
-      // 83-84行をカバーするには、parts.lengthが1になる必要がある
-      expect(result).not.toBeNull(); // parts[1]が空文字列なので、codeは空文字列になる
+      expect(result).toHaveLength(1);
+      expect(result[0]?.code).toBe("group-abc-123");
+      expect(result[0]?.name).toBe("DEPT_営業部");
     });
 
-    it("正常系: グループ名がDEPT_のみで分割後の要素数が2未満になる場合", async () => {
-      // このケースは実際には発生しない（DEPT_で始まる場合、split('_')で["DEPT", ""]になる）
-      // しかし、displayNameが"DEPT"のみの場合をテストする
+    it("正常系: プレフィックスに一致しない表示名のグループは無視され空配列を返す", async () => {
       const mockResponse = {
         value: [
           {
             id: "group-1",
-            displayName: "DEPT", // アンダースコアがない、split('_')で["DEPT"]になる（要素数1）
+            displayName: "DEPT", // "DEPT_"で始まらないため対象外
           },
         ],
       };
@@ -276,13 +270,10 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      // displayNameが"DEPT"の場合、startsWith("DEPT_")がfalseになるため、
-      // departmentGroupが見つからず、67行でreturn nullされる
-      // したがって、83-84行には到達しない
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it("正常系: displayNameが空文字列の場合はnullを返す", async () => {
+    it("正常系: displayNameが空文字列の場合は空配列を返す", async () => {
       const mockResponse = {
         value: [
           {
@@ -300,8 +291,39 @@ describe("user-service", () => {
 
       const result = await getUserDepartment("test-access-token");
 
-      // displayNameが空文字列の場合、startsWith(prefix)がfalseになるため、nullを返す
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
+    });
+
+    it("正常系: 正規表現にマッチする複数グループをすべて配列で返す", async () => {
+      const mockResponse = {
+        value: [
+          { id: "group-1", displayName: "DEPT_001_営業部" },
+          { id: "group-2", displayName: "その他" },
+          { id: "group-3", displayName: "DEPT_002_開発部" },
+        ],
+      };
+
+      const mockApi = {
+        get: vi.fn().mockResolvedValue(mockResponse),
+      };
+
+      mockGraphClient.api.mockReturnValue(mockApi);
+
+      const result = await getUserDepartment("test-access-token");
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        code: "group-1",
+        name: "DEPT_001_営業部",
+        groupId: "group-1",
+        groupName: "DEPT_001_営業部",
+      });
+      expect(result[1]).toEqual({
+        code: "group-3",
+        name: "DEPT_002_開発部",
+        groupId: "group-3",
+        groupName: "DEPT_002_開発部",
+      });
     });
 
     it("異常系: AppError以外のエラーが発生した場合はAppErrorに変換", async () => {

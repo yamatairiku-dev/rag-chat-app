@@ -22,8 +22,8 @@ type LoaderData = {
   user: {
     displayName: string;
     userEmail: string;
-    departmentCode: string;
-    departmentName?: string;
+    departmentCodes: string[];
+    departmentNames: string[];
   };
   conversationId?: string;
   initialMessages?: Message[];
@@ -87,8 +87,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       user: {
         displayName: session.displayName,
         userEmail: session.userEmail,
-        departmentCode: session.departmentCode,
-        departmentName: session.departmentName,
+        departmentCodes: session.departmentCodes,
+        departmentNames: session.departmentNames,
       },
       conversationId,
       initialMessages,
@@ -136,7 +136,7 @@ export async function action({ request }: Route.ActionArgs) {
     const response = await client.sendMessage({
       inputs: {
         user_id: session.userEmail,
-        department_code: session.departmentCode,
+        department_code: session.departmentNames.join(","),
       },
       query: trimmedQuery,
       response_mode: "blocking",

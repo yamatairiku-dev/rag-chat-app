@@ -57,7 +57,7 @@ describe("env", () => {
     expect(env.ENTRA_AUTHORITY).toBe("https://login.microsoftonline.com");
     expect(env.GRAPH_API_URL).toBe("https://graph.microsoft.com/v1.0");
     expect(env.GRAPH_API_SCOPE).toBe("https://graph.microsoft.com/.default");
-    expect(env.GRAPH_DEPARTMENT_GROUP_PREFIX).toBe("DEPT_");
+    expect(env.GRAPH_DEPARTMENT_GROUP_PREFIX).toBe("^ZA[A-Za-z]\\d{3}-[A-Za-z]");
     expect(env.DIFY_TIMEOUT).toBe(30000);
     expect(env.DIFY_MAX_RETRIES).toBe(3);
     expect(env.SESSION_MAX_AGE).toBe(86400000);
@@ -146,6 +146,24 @@ describe("env", () => {
       DIFY_API_URL: "https://api.dify.ai",
       DIFY_API_KEY: "app-test-key",
       SESSION_SECRET: "short",
+    };
+
+    await expect(import("~/lib/utils/env")).rejects.toThrow();
+  });
+
+  it("異常系: GRAPH_DEPARTMENT_GROUP_PREFIXが無効な正規表現の場合はエラー", async () => {
+    process.env = {
+      NODE_ENV: "test",
+      PORT: "3000",
+      ENTRA_CLIENT_ID: "123e4567-e89b-12d3-a456-426614174000",
+      ENTRA_CLIENT_SECRET: "test-secret",
+      ENTRA_TENANT_ID: "123e4567-e89b-12d3-a456-426614174001",
+      ENTRA_REDIRECT_URI: "http://localhost:3000/auth",
+      ENTRA_POST_LOGOUT_REDIRECT_URI: "http://localhost:3000/login",
+      DIFY_API_URL: "https://api.dify.ai",
+      DIFY_API_KEY: "app-test-key",
+      SESSION_SECRET: "test-session-secret-key-for-testing-purposes-only-32chars",
+      GRAPH_DEPARTMENT_GROUP_PREFIX: "[", // 不正な正規表現（閉じ括弧なし）
     };
 
     await expect(import("~/lib/utils/env")).rejects.toThrow();

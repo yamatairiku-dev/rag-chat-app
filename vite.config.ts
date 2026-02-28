@@ -17,6 +17,44 @@ export default defineConfig(({ mode }) => {
     server: {
       port: env.PORT ? parseInt(env.PORT, 10) : 5173,
     },
+    ssr: {
+      // markdown系を外部化せずにバンドルさせ、manualChunks指定を安定化
+      noExternal: [
+        "react-markdown",
+        "remark-gfm",
+        "react-syntax-highlighter",
+        "refractor",
+      ],
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (
+                id.includes("react-markdown") ||
+                id.includes("remark-gfm") ||
+                id.includes("unified") ||
+                id.includes("mdast-") ||
+                id.includes("micromark") ||
+                id.includes("hast-util") ||
+                id.includes("property-information") ||
+                id.includes("/vfile")
+              ) {
+                return "markdown";
+              }
+              if (
+                id.includes("react-syntax-highlighter") ||
+                id.includes("refractor")
+              ) {
+                return "syntax";
+              }
+            }
+            return undefined;
+          },
+        },
+      },
+    },
     test: {
       // DOM環境を有効化（Reactコンポーネントのテスト用）
       environment: 'jsdom',

@@ -28,8 +28,8 @@ export async function action({ request }: Route.ActionArgs) {
       userId = "test-user-123",
       userEmail = "test@example.com",
       displayName = "テストユーザー",
-      departmentCode = "001",
-      departmentName = "テスト部署",
+      departmentCodes = ["001"],
+      departmentNames = ["テスト部署"],
     } = body;
 
     // セッションを作成
@@ -37,8 +37,8 @@ export async function action({ request }: Route.ActionArgs) {
       userId,
       userEmail,
       displayName,
-      departmentCode,
-      departmentName,
+      departmentCodes: Array.isArray(departmentCodes) ? departmentCodes : [departmentCodes],
+      departmentNames: Array.isArray(departmentNames) ? departmentNames : [departmentNames],
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
       tokenExpiresAt: Date.now() + 3600000, // 1時間後

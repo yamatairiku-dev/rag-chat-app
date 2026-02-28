@@ -5,7 +5,7 @@ interface DifyRequestBase {
   /** ユーザー情報 */
   inputs: {
     user_id: string;
-    department_code: string;
+    department_code: string; // カンマ区切り文字列
   };
   /** ユーザーの質問 */
   query: string;

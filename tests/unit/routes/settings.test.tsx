@@ -26,8 +26,8 @@ const baseSession: UserSession = {
   userId: "user-123",
   userEmail: "test@example.com",
   displayName: "テストユーザー",
-  departmentCode: "001",
-  departmentName: "テスト部署",
+  departmentCodes: ["001"],
+  departmentNames: ["テスト部署"],
   accessToken: "test-access-token",
   refreshToken: "test-refresh-token",
   tokenExpiresAt: Date.now() + 3600000,
@@ -56,15 +56,15 @@ describe("settings route", () => {
       expect(data.user).toMatchObject({
         displayName: baseSession.displayName,
         userEmail: baseSession.userEmail,
-        departmentCode: baseSession.departmentCode,
-        departmentName: baseSession.departmentName,
+        departmentCodes: baseSession.departmentCodes,
+        departmentNames: baseSession.departmentNames,
       });
     });
 
-    it("正常系: departmentNameがundefinedの場合はそのまま返す", async () => {
+    it("正常系: departmentNamesが空の場合はそのまま返す", async () => {
       const sessionWithoutDept = {
         ...baseSession,
-        departmentName: undefined,
+        departmentNames: [] as string[],
       };
       requireUserSessionMock.mockResolvedValue(sessionWithoutDept);
 
@@ -73,7 +73,7 @@ describe("settings route", () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data.user.departmentName).toBeUndefined();
+      expect(data.user.departmentNames).toEqual([]);
     });
   });
 
@@ -105,10 +105,10 @@ describe("settings route", () => {
       expect(screen.getByText("テスト部署")).toBeInTheDocument();
     });
 
-    it("正常系: departmentNameが未設定の場合は「未設定」が表示される", async () => {
+    it("正常系: departmentNamesが空の場合は「未設定」が表示される", async () => {
       const sessionWithoutDept = {
         ...baseSession,
-        departmentName: undefined,
+        departmentNames: [] as string[],
       };
       requireUserSessionMock.mockResolvedValue(sessionWithoutDept);
 

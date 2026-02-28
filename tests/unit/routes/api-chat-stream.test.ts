@@ -61,8 +61,8 @@ const baseSession: UserSession = {
   userId: "user-1",
   userEmail: "user@example.com",
   displayName: "テスト利用者",
-  departmentCode: "001",
-  departmentName: "営業部",
+  departmentCodes: ["001"],
+  departmentNames: ["テスト部署"],
   accessToken: "token",
   refreshToken: "refresh",
   tokenExpiresAt: Date.now() + 3600 * 1000,
@@ -148,7 +148,7 @@ describe("api/chat-stream action", () => {
     expect(args).toMatchObject({
       conversationId: "conv-1",
       userId: baseSession.userId,
-      departmentCode: baseSession.departmentCode,
+      departmentCodes: baseSession.departmentCodes,
     });
     expect(args.messages).toHaveLength(2);
     expect(args.messages[0]).toMatchObject({

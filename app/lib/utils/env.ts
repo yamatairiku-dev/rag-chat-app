@@ -17,7 +17,21 @@ const envSchema = z.object({
   // Graph API
   GRAPH_API_URL: z.string().url().default('https://graph.microsoft.com/v1.0'),
   GRAPH_API_SCOPE: z.string().default('https://graph.microsoft.com/.default'),
-  GRAPH_DEPARTMENT_GROUP_PREFIX: z.string().default('DEPT_'),
+  /** 部署グループの表示名にマッチさせる正規表現パターン（例: ^ZA[A-Za-z]\\d{3}-[A-Za-z]） */
+  GRAPH_DEPARTMENT_GROUP_PREFIX: z
+    .string()
+    .default('^ZA[A-Za-z]\\d{3}-[A-Za-z]')
+    .refine(
+      (s) => {
+        try {
+          new RegExp(s);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'GRAPH_DEPARTMENT_GROUP_PREFIX must be a valid regex pattern' }
+    ),
 
   // Dify
   DIFY_API_URL: z.string().url('Invalid Dify API URL'),

@@ -7,8 +7,8 @@ type LoaderData = {
   user: {
     displayName: string;
     userEmail: string;
-    departmentCode: string;
-    departmentName?: string;
+    departmentCodes: string[];
+    departmentNames: string[];
   };
 };
 
@@ -19,8 +19,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     user: {
       displayName: session.displayName,
       userEmail: session.userEmail,
-      departmentCode: session.departmentCode,
-      departmentName: session.departmentName,
+      departmentCodes: session.departmentCodes,
+      departmentNames: session.departmentNames,
     },
   };
   return Response.json(data);
@@ -47,12 +47,12 @@ export default function Settings() {
               </div>
               <div>
                 <dt className="text-gray-500">所属コード</dt>
-                <dd className="mt-1 text-gray-900">{user.departmentCode}</dd>
+                <dd className="mt-1 text-gray-900">{user.departmentCodes.join(", ") || "—"}</dd>
               </div>
               <div>
                 <dt className="text-gray-500">所属部署</dt>
                 <dd className="mt-1 text-gray-900">
-                  {user.departmentName || "未設定"}
+                  {user.departmentNames.length > 0 ? user.departmentNames.join(" / ") : "未設定"}
                 </dd>
               </div>
             </dl>

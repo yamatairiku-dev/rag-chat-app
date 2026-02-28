@@ -15,8 +15,8 @@ const baseSession: UserSession = {
   userId: "user-123",
   userEmail: "test@example.com",
   displayName: "テストユーザー",
-  departmentCode: "001",
-  departmentName: "テスト部署",
+  departmentCodes: ["001"],
+  departmentNames: ["テスト部署"],
   accessToken: "test-access-token",
   refreshToken: "test-refresh-token",
   tokenExpiresAt: Date.now() + 3600000,
@@ -44,15 +44,15 @@ describe("settings route", () => {
       expect(data.user).toMatchObject({
         displayName: baseSession.displayName,
         userEmail: baseSession.userEmail,
-        departmentCode: baseSession.departmentCode,
-        departmentName: baseSession.departmentName,
+        departmentCodes: baseSession.departmentCodes,
+        departmentNames: baseSession.departmentNames,
       });
     });
 
     it("正常系: 部署名がない場合も正しく処理される", async () => {
       const sessionWithoutDepartment: UserSession = {
         ...baseSession,
-        departmentName: undefined,
+        departmentNames: [],
       };
 
       requireUserSessionMock.mockResolvedValue(sessionWithoutDepartment);
@@ -61,7 +61,7 @@ describe("settings route", () => {
       const response = await loader({ request } as never);
 
       const data = await response.json();
-      expect(data.user.departmentName).toBeUndefined();
+      expect(data.user.departmentNames).toEqual([]);
     });
 
     it("正常系: requireUserSessionが呼ばれる", async () => {

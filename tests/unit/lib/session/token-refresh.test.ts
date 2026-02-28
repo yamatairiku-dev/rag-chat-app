@@ -25,8 +25,8 @@ describe("token-refresh", () => {
       userId: "user-123",
       userEmail: "test@example.com",
       displayName: "Test User",
-      departmentCode: "001",
-      departmentName: "テスト部署",
+      departmentCodes: ["001"],
+      departmentNames: ["テスト部署"],
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",
       tokenExpiresAt: now + 3600000, // 1時間後

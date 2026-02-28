@@ -7,7 +7,8 @@ describe("Header", () => {
   const baseUser = {
     displayName: "テストユーザー",
     userEmail: "test@example.com",
-    departmentCode: "001",
+    departmentCodes: ["001"],
+    departmentNames: ["テスト部署"],
   };
 
   const renderWithRouter = (component: React.ReactElement) => {
@@ -42,19 +43,21 @@ describe("Header", () => {
     it("部署コードが表示される", () => {
       renderWithRouter(<Header user={baseUser} />);
 
-      expect(screen.getByText("001")).toBeInTheDocument();
+      const codes = screen.getAllByText(/001/);
+      expect(codes.length).toBeGreaterThan(0);
     });
 
     it("部署名がある場合は部署名と部署コードが表示される", () => {
       const userWithDepartment = {
         ...baseUser,
-        departmentName: "テスト部署",
+        departmentNames: ["テスト部署"],
       };
 
       renderWithRouter(<Header user={userWithDepartment} />);
 
-      expect(screen.getByText(/テスト部署/)).toBeInTheDocument();
-      // 部署コードは複数箇所に表示される可能性があるため、getAllByTextを使用
+      // 表示形式は "テスト部署 (001)" なので複数ノードにマッチする場合は getAllByText を使用
+      const departmentTexts = screen.getAllByText(/テスト部署/);
+      expect(departmentTexts.length).toBeGreaterThan(0);
       const departmentCodes = screen.getAllByText(/001/);
       expect(departmentCodes.length).toBeGreaterThan(0);
     });

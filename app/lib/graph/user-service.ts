@@ -34,11 +34,11 @@ export async function getUserInfo(accessToken: string): Promise<GraphUser> {
 }
 
 /**
- * 所属部署情報取得
+ * 所属部署情報取得（正規表現にマッチするすべてのグループを配列で返す）
  */
 export async function getUserDepartment(
   accessToken: string
-): Promise<DepartmentInfo | null> {
+): Promise<DepartmentInfo[]> {
   try {
     const client = createGraphClient(accessToken);
     console.log("[所属部署取得] Graph API呼び出し: /me/memberOf");
@@ -47,7 +47,7 @@ export async function getUserDepartment(
     // デバッグ: 実際の応答をログに出力
     console.log("[所属部署取得] Graph API応答:", JSON.stringify(response, null, 2));
     console.log("[所属部署取得] 取得したグループ数:", response.value?.length || 0);
-    
+
     if (response.value && response.value.length > 0) {
       console.log("[所属部署取得] グループ一覧:");
       response.value.forEach((group, index) => {
@@ -57,41 +57,28 @@ export async function getUserDepartment(
       console.log("[所属部署取得] グループが見つかりませんでした");
     }
 
-    const prefix = env.GRAPH_DEPARTMENT_GROUP_PREFIX; // "DEPT_"
-    console.log("[所属部署取得] 検索プレフィックス:", prefix);
-    
-    const departmentGroup = response.value.find((group) =>
-      group.displayName?.startsWith(prefix)
+    const pattern = env.GRAPH_DEPARTMENT_GROUP_PREFIX;
+    const departmentRegex = new RegExp(pattern);
+    console.log("[所属部署取得] 検索パターン（正規表現）:", pattern);
+
+    const departmentGroups = (response.value ?? []).filter(
+      (group) => group.displayName != null && departmentRegex.test(group.displayName)
     );
 
-    if (!departmentGroup) {
-      console.log("[所属部署取得] プレフィックスに一致するグループが見つかりませんでした");
+    if (departmentGroups.length === 0) {
+      console.log("[所属部署取得] 正規表現に一致するグループが見つかりませんでした");
       console.log("[所属部署取得] 検索対象のグループ名:", response.value?.map(g => g.displayName).join(', ') || '(なし)');
-      return null;
+      return [];
     }
 
-    console.log("[所属部署取得] 見つかった部署グループ:", {
-      id: departmentGroup.id,
-      displayName: departmentGroup.displayName,
-    });
+    const result = departmentGroups.map((group) => ({
+      code: group.id,
+      name: group.displayName,
+      groupId: group.id,
+      groupName: group.displayName,
+    }));
 
-    // "DEPT_001_営業部" → ["DEPT", "001", "営業部"]
-    const parts = departmentGroup.displayName.split('_');
-    console.log("[所属部署取得] グループ名を分割:", parts);
-    
-    if (parts.length < 2) {
-      console.log("[所属部署取得] グループ名の形式が不正です（分割後の要素数が2未満）");
-      return null;
-    }
-
-    const result = {
-      code: parts[1],  // "001"
-      name: parts.slice(2).join('_'),  // "営業部"
-      groupId: departmentGroup.id,
-      groupName: departmentGroup.displayName,
-    };
-    
-    console.log("[所属部署取得] 抽出結果:", result);
+    console.log("[所属部署取得] 抽出結果（件数:", result.length, "):", result);
     return result;
   } catch (error) {
     console.error("[所属部署取得] エラー発生:", error);

@@ -12,7 +12,7 @@ export interface ConversationMessage {
 export interface ConversationRecord {
   conversationId: string;
   userId: string;
-  departmentCode: string;
+  departmentCodes: string[];
   createdAt: number;
   updatedAt: number;
   messages: ConversationMessage[];
@@ -25,7 +25,7 @@ const conversations: ConversationStore = new Map();
 interface AppendConversationMessagesArgs {
   conversationId?: string;
   userId: string;
-  departmentCode: string;
+  departmentCodes: string[];
   messages: ConversationMessage[];
 }
 
@@ -36,7 +36,7 @@ interface AppendConversationMessagesArgs {
 export async function appendConversationMessages({
   conversationId,
   userId,
-  departmentCode,
+  departmentCodes,
   messages,
 }: AppendConversationMessagesArgs): Promise<string> {
   const now = Date.now();
@@ -52,7 +52,7 @@ export async function appendConversationMessages({
   conversations.set(resolvedConversationId, {
     conversationId: resolvedConversationId,
     userId,
-    departmentCode,
+    departmentCodes,
     createdAt: now,
     updatedAt: now,
     messages: [...messages],
