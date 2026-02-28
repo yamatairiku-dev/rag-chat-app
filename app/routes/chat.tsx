@@ -540,9 +540,9 @@ export default function Chat() {
       if (isComposing || event.nativeEvent.isComposing) {
         return;
       }
-      // 変換確定直後（200ms以内）のEnterキーは無視
+      // 変換確定直後（100ms以内）のEnterキーは無視
       const timeSinceCompositionEnd = Date.now() - compositionEndTimeRef.current;
-      if (timeSinceCompositionEnd < 200) {
+      if (timeSinceCompositionEnd < 100) {
         return;
       }
       // Shift+Enterの場合は改行を許可
