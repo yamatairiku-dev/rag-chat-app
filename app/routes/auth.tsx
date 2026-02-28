@@ -15,17 +15,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   if (error) {
     console.error("[認証コールバック] エラー:", error);
-    return new Response(
-      JSON.stringify({ error: `認証エラー: ${error}` }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+    return redirect(
+      `/error?title=${encodeURIComponent("認証エラー")}&message=${encodeURIComponent(`認証エラー: ${error}`)}&status=400`
     );
   }
 
   if (!code) {
     console.error("[認証コールバック] 認証コードが見つかりません");
-    return new Response(
-      JSON.stringify({ error: "認証コードが見つかりません" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+    return redirect(
+      `/error?title=${encodeURIComponent("認証エラー")}&message=${encodeURIComponent("認証コードが見つかりません")}&status=400`
     );
   }
 
@@ -55,10 +53,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     if (departments.length === 0) {
       console.error("[認証コールバック] 所属部署が見つかりません");
       console.error("[認証コールバック] 詳細は上記の[所属部署取得]ログを確認してください");
-      throw new AppError(
-        ErrorCode.AUTH_DEPARTMENT_NOT_FOUND,
-        "所属部署が見つかりません。アクセス権限がありません。",
-        403
+      return redirect(
+        `/error?title=${encodeURIComponent("アクセス権限がありません")}&message=${encodeURIComponent("所属部署が見つかりません。アクセス権限がありません。")}&status=403`
       );
     }
     console.log("[認証コールバック] ステップ3: 所属部署取得完了", {
@@ -86,17 +82,15 @@ export async function loader({ request }: Route.LoaderArgs) {
     return redirect("/chat", {
       headers: { "Set-Cookie": cookie },
     });
-  } catch (error) {
-    console.error("認証エラー:", error);
-    if (error instanceof AppError) {
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: error.statusCode, headers: { "Content-Type": "application/json" } }
+  } catch (err) {
+    console.error("認証エラー:", err);
+    if (err instanceof AppError) {
+      return redirect(
+        `/error?title=${encodeURIComponent(err.statusCode === 403 ? "アクセス権限がありません" : "エラー")}&message=${encodeURIComponent(err.message)}&status=${err.statusCode}`
       );
     }
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "システムエラー" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return redirect(
+      `/error?title=${encodeURIComponent("システムエラー")}&message=${encodeURIComponent(err instanceof Error ? err.message : "システムエラー")}&status=500`
     );
   }
 }

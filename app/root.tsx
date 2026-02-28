@@ -60,21 +60,28 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   if (isRouteErrorResponse(error)) {
     statusCode = error.status;
+    const customMessage =
+      typeof (error as { data?: { error?: string } }).data?.error === "string"
+        ? (error as { data: { error: string } }).data.error
+        : null;
     if (error.status === 404) {
       message = "ページが見つかりません";
-      details = "お探しのページは存在しないか、移動された可能性があります。";
+      details = customMessage ?? "お探しのページは存在しないか、移動された可能性があります。";
     } else if (error.status === 401) {
       message = "認証が必要です";
-      details = "このページにアクセスするにはログインが必要です。";
+      details = customMessage ?? "このページにアクセスするにはログインが必要です。";
     } else if (error.status === 403) {
       message = "アクセス権限がありません";
-      details = "このページにアクセスする権限がありません。";
+      details =
+        customMessage ?? "このページにアクセスする権限がありません。";
     } else if (error.status === 500) {
       message = "サーバーエラー";
-      details = "サーバーでエラーが発生しました。しばらく時間をおいて再度お試しください。";
+      details =
+        customMessage ??
+        "サーバーでエラーが発生しました。しばらく時間をおいて再度お試しください。";
     } else {
       message = `エラー (${error.status})`;
-      details = error.statusText || details;
+      details = customMessage ?? error.statusText ?? details;
     }
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message || details;

@@ -17,10 +17,10 @@ vi.mock("~/lib/session/session-manager", () => ({
 }));
 
 vi.mock("react-router", async () => {
-  const actual = await vi.importActual("react-router");
+  const actual = await vi.importActual<typeof import("react-router")>("react-router");
   return {
     ...actual,
-    redirect: vi.fn(),
+    redirect: vi.fn((url: string, init?: ResponseInit) => actual.redirect(url, init)),
   };
 });
 
@@ -40,24 +40,30 @@ describe("auth route", () => {
     vi.clearAllMocks();
   });
 
-  it("異常系: errorパラメータがある場合は400エラーを返す", async () => {
+  it("異常系: errorパラメータがある場合はエラーページへリダイレクト", async () => {
     const request = new Request("http://localhost/auth?error=access_denied");
 
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(400);
-    const data = await response.json();
-    expect(data.error).toContain("認証エラー: access_denied");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("認証エラー: access_denied"));
+    expect(location).toContain("status=400");
   });
 
-  it("異常系: codeパラメータがない場合は400エラーを返す", async () => {
+  it("異常系: codeパラメータがない場合はエラーページへリダイレクト", async () => {
     const request = new Request("http://localhost/auth");
 
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(400);
-    const data = await response.json();
-    expect(data.error).toContain("認証コードが見つかりません");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("認証コードが見つかりません"));
+    expect(location).toContain("status=400");
   });
 
   it("正常系: 認証フローが成功した場合は/chatにリダイレクト", async () => {
@@ -89,7 +95,7 @@ describe("auth route", () => {
     getUserInfoMock.mockResolvedValue(userInfo);
     getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
+    redirectMock.mockReturnValueOnce(new Response(null, { status: 302, headers: { Location: "/chat" } }));
 
     const request = new Request(`http://localhost/auth?code=${code}`);
     const result = await loader({ request } as never);
@@ -104,7 +110,7 @@ describe("auth route", () => {
     expect(result).toBeInstanceOf(Response);
   });
 
-  it("異常系: 所属部署が見つからない場合は403エラーを返す", async () => {
+  it("異常系: 所属部署が見つからない場合はエラーページへリダイレクト", async () => {
     const code = "test-auth-code";
     const tokens = {
       accessToken: "test-access-token",
@@ -129,12 +135,15 @@ describe("auth route", () => {
     const request = new Request(`http://localhost/auth?code=${code}`);
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(403);
-    const data = await response.json();
-    expect(data.error).toContain("所属部署が見つかりません");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("所属部署が見つかりません。アクセス権限がありません。"));
+    expect(location).toContain("status=403");
   });
 
-  it("異常系: AppErrorが発生した場合はエラーレスポンスを返す", async () => {
+  it("異常系: AppErrorが発生した場合はエラーページへリダイレクト", async () => {
     const code = "test-auth-code";
     const error = new AppError(
       ErrorCode.AUTH_INVALID_TOKEN,
@@ -147,12 +156,15 @@ describe("auth route", () => {
     const request = new Request(`http://localhost/auth?code=${code}`);
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(401);
-    const data = await response.json();
-    expect(data.error).toBe("無効なトークンです");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("無効なトークンです"));
+    expect(location).toContain("status=401");
   });
 
-  it("異常系: 一般的なErrorが発生した場合は500エラーを返す", async () => {
+  it("異常系: 一般的なErrorが発生した場合はエラーページへリダイレクト", async () => {
     const code = "test-auth-code";
     const error = new Error("ネットワークエラー");
 
@@ -161,12 +173,15 @@ describe("auth route", () => {
     const request = new Request(`http://localhost/auth?code=${code}`);
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(500);
-    const data = await response.json();
-    expect(data.error).toBe("ネットワークエラー");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("ネットワークエラー"));
+    expect(location).toContain("status=500");
   });
 
-  it("異常系: 未知のエラーが発生した場合は500エラーを返す", async () => {
+  it("異常系: 未知のエラーが発生した場合はエラーページへリダイレクト", async () => {
     const code = "test-auth-code";
 
     exchangeCodeForTokensMock.mockRejectedValue("Unknown error");
@@ -174,9 +189,12 @@ describe("auth route", () => {
     const request = new Request(`http://localhost/auth?code=${code}`);
     const response = await loader({ request } as never);
 
-    expect(response.status).toBe(500);
-    const data = await response.json();
-    expect(data.error).toBe("システムエラー");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location") ?? "";
+    expect(location).toContain("/error");
+    expect(location).toContain(encodeURIComponent("システムエラー"));
+    expect(location).toContain("status=500");
   });
 
   it("正常系: mailが存在する場合はmailを使用", async () => {
@@ -208,7 +226,9 @@ describe("auth route", () => {
     getUserInfoMock.mockResolvedValue(userInfo);
     getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
+    redirectMock.mockReturnValueOnce(
+      new Response(null, { status: 302, headers: { Location: "/chat" } })
+    );
 
     const request = new Request(`http://localhost/auth?code=${code}`);
     await loader({ request } as never);
@@ -247,7 +267,9 @@ describe("auth route", () => {
     getUserInfoMock.mockResolvedValue(userInfo);
     getUserDepartmentMock.mockResolvedValue([department]);
     createSessionMock.mockResolvedValue({ cookie, sessionId: "test-session-id" });
-    redirectMock.mockReturnValue(new Response(null, { status: 302, headers: { Location: "/chat" } }));
+    redirectMock.mockReturnValueOnce(
+      new Response(null, { status: 302, headers: { Location: "/chat" } })
+    );
 
     const request = new Request(`http://localhost/auth?code=${code}`);
     await loader({ request } as never);

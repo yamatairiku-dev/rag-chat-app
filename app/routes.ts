@@ -5,6 +5,7 @@ export default [
   route("auth/login", "routes/auth.login.tsx"),
   route("auth", "routes/auth.tsx"),
   route("auth/logout", "routes/auth.logout.tsx"),
+  route("error", "routes/error.tsx"),
   route("chat", "routes/chat.tsx"),
   route("conversations", "routes/conversations.tsx"),
   route("settings", "routes/settings.tsx"),
