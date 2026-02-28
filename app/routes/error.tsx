@@ -23,23 +23,23 @@ export default function ErrorPage() {
   const { title, message, status } = useLoaderData<Route.LoaderData>();
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
-        <h1 className="mb-4 text-2xl font-bold text-red-900">{title}</h1>
-        <p className="mb-4 text-gray-700">{message}</p>
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md rounded-lg border border-destructive/30 bg-destructive/10 p-6 shadow-sm">
+        <h1 className="mb-4 text-2xl font-bold text-destructive">{title}</h1>
+        <p className="mb-4 text-foreground">{message}</p>
         {status != null && (
-          <p className="mb-4 text-sm text-gray-500">ステータスコード: {status}</p>
+          <p className="mb-4 text-sm text-muted-foreground">ステータスコード: {status}</p>
         )}
         <div className="mt-6 flex flex-wrap gap-3">
           <a
             href="/"
-            className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-block rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             ホームに戻る
           </a>
           <a
             href="/auth/login"
-            className="inline-block rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="inline-block rounded border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-accent"
           >
             ログイン
           </a>

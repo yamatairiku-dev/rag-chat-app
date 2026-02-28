@@ -89,21 +89,21 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto max-w-2xl">
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
-        <h1 className="mb-4 text-2xl font-bold text-red-900">{message}</h1>
-        <p className="mb-4 text-gray-700">{details}</p>
+    <main className="pt-16 p-4 container mx-auto max-w-2xl bg-background">
+      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 shadow-sm">
+        <h1 className="mb-4 text-2xl font-bold text-destructive">{message}</h1>
+        <p className="mb-4 text-foreground">{details}</p>
         {statusCode && (
-          <p className="mb-4 text-sm text-gray-500">
+          <p className="mb-4 text-sm text-muted-foreground">
             ステータスコード: {statusCode}
           </p>
         )}
         {import.meta.env.DEV && stack && (
           <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-semibold text-gray-700">
+            <summary className="cursor-pointer text-sm font-semibold text-foreground">
               詳細情報（開発環境のみ）
             </summary>
-            <pre className="mt-2 w-full overflow-x-auto rounded bg-gray-100 p-4 text-xs">
+            <pre className="mt-2 w-full overflow-x-auto rounded bg-muted p-4 text-xs text-foreground">
               <code>{stack}</code>
             </pre>
           </details>
@@ -111,7 +111,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <div className="mt-6">
           <a
             href="/"
-            className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-block rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             ホームに戻る
           </a>

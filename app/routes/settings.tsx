@@ -33,36 +33,36 @@ export default function Settings() {
   const { user, appTitle } = useLoaderData<LoaderData>();
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header user={user} appTitle={appTitle} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
         <div className="mx-auto w-full max-w-2xl space-y-6">
-          <section className="rounded-lg border bg-white p-6 shadow">
-            <h2 className="mb-4 text-lg font-semibold">ユーザー情報</h2>
+          <section className="rounded-lg border border-border bg-card p-6 shadow">
+            <h2 className="mb-4 text-lg font-semibold text-foreground">ユーザー情報</h2>
             <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
-                <dt className="text-gray-500">表示名</dt>
-                <dd className="mt-1 text-gray-900">{user.displayName}</dd>
+                <dt className="text-muted-foreground">表示名</dt>
+                <dd className="mt-1 text-foreground">{user.displayName}</dd>
               </div>
               <div>
-                <dt className="text-gray-500">メールアドレス</dt>
-                <dd className="mt-1 text-gray-900">{user.userEmail}</dd>
+                <dt className="text-muted-foreground">メールアドレス</dt>
+                <dd className="mt-1 text-foreground">{user.userEmail}</dd>
               </div>
               <div>
-                <dt className="text-gray-500">所属部署</dt>
-                <dd className="mt-1 text-gray-900">
+                <dt className="text-muted-foreground">所属部署</dt>
+                <dd className="mt-1 text-foreground">
                   {user.departmentNames.length > 0 ? user.departmentNames.join(" / ") : "未設定"}
                 </dd>
               </div>
             </dl>
           </section>
 
-          <section className="rounded-lg border bg-white p-6 shadow">
-            <h2 className="mb-4 text-lg font-semibold">アカウント</h2>
+          <section className="rounded-lg border border-border bg-card p-6 shadow">
+            <h2 className="mb-4 text-lg font-semibold text-foreground">アカウント</h2>
             <Form method="post" action="/auth/logout">
               <button
                 type="submit"
-                className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                className="rounded bg-destructive px-4 py-2 text-sm font-semibold text-white hover:bg-destructive/90"
               >
                 ログアウト
               </button>

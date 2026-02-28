@@ -43,16 +43,16 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
   const initials = getInitials(user.displayName);
 
   return (
-    <header className="border-b bg-white" role="banner">
+    <header className="border-b border-border bg-card" role="banner">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <div>
-          <h1 className="text-xl font-bold">{appTitle}</h1>
+          <h1 className="text-xl font-bold text-foreground">{appTitle}</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right text-xs" aria-label="ユーザー情報">
-            <p className="font-medium">{user.displayName}</p>
-            <p className="text-gray-500" aria-label={`メールアドレス: ${user.userEmail}`}>{user.userEmail}</p>
-            <p className="text-gray-500">{formatDepartments(user.departmentNames, user.departmentCodes)}</p>
+            <p className="font-medium text-foreground">{user.displayName}</p>
+            <p className="text-muted-foreground" aria-label={`メールアドレス: ${user.userEmail}`}>{user.userEmail}</p>
+            <p className="text-muted-foreground">{formatDepartments(user.departmentNames, user.departmentCodes)}</p>
           </div>
           <Avatar aria-label={`${user.displayName}のアバター`}>
             <AvatarFallback aria-hidden="true">{initials}</AvatarFallback>
@@ -65,9 +65,9 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
         </div>
       </div>
       {errorMessage && (
-        <div className="border-t border-red-100 bg-red-50" role="alert" aria-live="polite">
+        <div className="border-t border-destructive/20 bg-destructive/10" role="alert" aria-live="polite">
           <div className="container mx-auto px-4 py-2">
-            <p className="text-xs text-red-600">{errorMessage}</p>
+            <p className="text-xs text-destructive">{errorMessage}</p>
           </div>
         </div>
       )}

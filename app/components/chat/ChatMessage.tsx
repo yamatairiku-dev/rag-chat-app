@@ -30,8 +30,8 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
       <div
         className={`max-w-[80%] rounded-lg px-4 py-3 text-sm shadow ${
           isUser
-            ? "bg-blue-600 text-white"
-            : "bg-gray-100 text-gray-800"
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground"
         }`}
       >
         <div className="leading-relaxed">
@@ -39,7 +39,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             <>
               <Suspense
                 fallback={
-                  <span className="text-xs text-gray-400">読み込み中…</span>
+                  <span className="text-xs text-muted-foreground">読み込み中…</span>
                 }
               >
                 <MarkdownRenderer
@@ -51,7 +51,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
           ) : (
             <Suspense
               fallback={
-                <span className="text-xs text-gray-400">読み込み中…</span>
+                <span className="text-xs text-muted-foreground">読み込み中…</span>
               }
             >
               <MarkdownRenderer content={normalizeContent(message.content)} />
@@ -62,7 +62,7 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
           <div className="mt-2">
             <p
               className={`text-xs ${
-                isUser ? "text-red-200" : "text-red-500"
+                isUser ? "text-red-200" : "text-destructive"
               }`}
               role="alert"
               aria-live="polite"
@@ -74,8 +74,8 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
                 onClick={() => onRetry(message.retryQuery!)}
                 className={`mt-2 rounded px-3 py-1 text-xs font-medium transition ${
                   isUser
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                    ? "bg-destructive text-white hover:bg-destructive/90"
+                    : "bg-destructive/20 text-destructive hover:bg-destructive/30"
                 }`}
                 aria-label="再試行"
               >

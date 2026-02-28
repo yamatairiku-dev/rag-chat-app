@@ -571,18 +571,18 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header user={user} appTitle={appTitle} errorMessage={formError} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6" role="main">
         <div
-          className="flex-1 overflow-y-auto rounded-lg bg-white p-6 shadow"
+          className="flex-1 overflow-y-auto rounded-lg bg-card border border-border p-6 shadow"
           role="log"
           aria-label="チャットメッセージ"
           aria-live="polite"
           aria-atomic="false"
         >
           {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-gray-400" role="status">
+            <div className="flex h-full items-center justify-center text-muted-foreground" role="status">
               最初の質問を入力してください。
             </div>
           ) : (
@@ -597,7 +597,7 @@ export default function Chat() {
           <div ref={messagesEndRef} aria-hidden="true" />
         </div>
 
-        <div className="mt-4 rounded-lg bg-white p-4 shadow">
+        <div className="mt-4 rounded-lg bg-card border border-border p-4 shadow">
           <Form
             ref={formRef}
             method="post"
@@ -618,7 +618,7 @@ export default function Chat() {
               id="chat-query"
               name="query"
               rows={1}
-              className={`w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              className={`w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring ${
                 isMounted ? "overflow-hidden" : ""
               }`}
               placeholder="社内規則やマニュアルについて質問してください…（Enterで送信、Shift+Enterで改行）"
@@ -634,7 +634,7 @@ export default function Chat() {
             />
             <button
               type="submit"
-              className="rounded bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 self-start whitespace-nowrap"
+              className="rounded bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 self-start whitespace-nowrap"
               style={{ height: "2.5rem", writingMode: "horizontal-tb" }}
               disabled={isStreaming}
               aria-label={isStreaming ? "送信中" : "メッセージを送信"}
@@ -643,7 +643,7 @@ export default function Chat() {
             </button>
           </Form>
           {formError && (
-            <div id="form-error" className="mt-2 text-sm text-red-600" role="alert" aria-live="polite">
+            <div id="form-error" className="mt-2 text-sm text-destructive" role="alert" aria-live="polite">
               {formError}
             </div>
           )}

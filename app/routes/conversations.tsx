@@ -107,15 +107,15 @@ export default function Conversations() {
   const actionData = useActionData<ActionData>();
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header user={user} appTitle={appTitle} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">会話履歴</h2>
+          <h2 className="text-xl font-semibold text-foreground">会話履歴</h2>
         </div>
-        <div className="flex-1 overflow-y-auto rounded-lg bg-white p-4 shadow">
+        <div className="flex-1 overflow-y-auto rounded-lg bg-card border border-border p-4 shadow">
           {conversations.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-gray-400">
+            <div className="flex h-full items-center justify-center text-muted-foreground">
               会話履歴がありません。
             </div>
           ) : (
@@ -126,17 +126,17 @@ export default function Conversations() {
                 return (
                   <div
                     key={conv.conversationId}
-                    className="flex items-start justify-between rounded border px-4 py-3 hover:bg-gray-50"
+                    className="flex items-start justify-between rounded border border-border px-4 py-3 hover:bg-accent/50"
                   >
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-medium">
+                      <h3 className="truncate text-sm font-medium text-foreground">
                         {lastMessage?.content?.slice(0, 40) || "タイトルなし"}
                       </h3>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {new Date(conv.updatedAt).toLocaleString("ja-JP")}
                       </p>
                       {lastMessage && (
-                        <p className="mt-2 line-clamp-2 text-xs text-gray-600">
+                        <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
                           {lastMessage.content}
                         </p>
                       )}
@@ -150,7 +150,7 @@ export default function Conversations() {
                         />
                         <button
                           type="submit"
-                          className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                          className="rounded bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                         >
                           開く
                         </button>
@@ -164,7 +164,7 @@ export default function Conversations() {
                         <input type="hidden" name="action" value="delete" />
                         <button
                           type="submit"
-                          className="rounded bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                          className="rounded bg-destructive px-3 py-1 text-xs font-semibold text-white hover:bg-destructive/90"
                           onClick={(event) => {
                             if (!confirm("この会話を削除しますか？")) {
                               event.preventDefault();
@@ -182,7 +182,7 @@ export default function Conversations() {
           )}
         </div>
         {actionData && !actionData.success && (
-          <p className="mt-4 text-xs text-red-600">{actionData.error}</p>
+          <p className="mt-4 text-xs text-destructive">{actionData.error}</p>
         )}
       </main>
     </div>
