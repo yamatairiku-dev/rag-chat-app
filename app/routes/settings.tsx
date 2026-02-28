@@ -2,6 +2,7 @@ import type { Route } from "./+types/settings";
 import { Form, useLoaderData } from "react-router";
 import { Header } from "~/components/layout/Header";
 import { requireUserSession } from "~/lib/session/session-manager";
+import { env } from "~/lib/utils/env";
 
 type LoaderData = {
   user: {
@@ -10,6 +11,7 @@ type LoaderData = {
     departmentCodes: string[];
     departmentNames: string[];
   };
+  appTitle: string;
 };
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -22,16 +24,17 @@ export async function loader({ request }: Route.LoaderArgs) {
       departmentCodes: session.departmentCodes,
       departmentNames: session.departmentNames,
     },
+    appTitle: env.APP_TITLE,
   };
   return Response.json(data);
 }
 
 export default function Settings() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user, appTitle } = useLoaderData<LoaderData>();
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Header user={user} />
+      <Header user={user} appTitle={appTitle} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
         <div className="mx-auto w-full max-w-2xl space-y-6">
           <section className="rounded-lg border bg-white p-6 shadow">
@@ -44,10 +47,6 @@ export default function Settings() {
               <div>
                 <dt className="text-gray-500">メールアドレス</dt>
                 <dd className="mt-1 text-gray-900">{user.userEmail}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-500">所属コード</dt>
-                <dd className="mt-1 text-gray-900">{user.departmentCodes.join(", ") || "—"}</dd>
               </div>
               <div>
                 <dt className="text-gray-500">所属部署</dt>

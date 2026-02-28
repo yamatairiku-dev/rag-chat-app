@@ -25,6 +25,7 @@ type LoaderData = {
     departmentCodes: string[];
     departmentNames: string[];
   };
+  appTitle: string;
   conversationId?: string;
   initialMessages?: Message[];
 };
@@ -90,6 +91,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         departmentCodes: session.departmentCodes,
         departmentNames: session.departmentNames,
       },
+      appTitle: env.APP_TITLE,
       conversationId,
       initialMessages,
     };
@@ -183,7 +185,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Chat() {
-  const { user, initialMessages, conversationId: loaderConversationId } =
+  const { user, appTitle, initialMessages, conversationId: loaderConversationId } =
     useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<Message[]>(
     () => initialMessages ?? [],
@@ -570,7 +572,7 @@ export default function Chat() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Header user={user} errorMessage={formError} />
+      <Header user={user} appTitle={appTitle} errorMessage={formError} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6" role="main">
         <div
           className="flex-1 overflow-y-auto rounded-lg bg-white p-6 shadow"

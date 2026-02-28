@@ -5,6 +5,8 @@ const envSchema = z.object({
   // App
   NODE_ENV: z.enum(['development', 'production', 'test']),
   PORT: z.string().transform(Number).pipe(z.number().min(1).max(65535)),
+  /** ヘッダーに表示するアプリケーションタイトル（未設定時: Difyフロントエンドアプリ） */
+  APP_TITLE: z.string().default('Difyフロントエンドアプリ'),
 
   // Entra ID
   ENTRA_CLIENT_ID: z.string().uuid('Invalid Entra Client ID format'),

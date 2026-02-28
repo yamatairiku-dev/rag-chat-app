@@ -11,6 +11,8 @@ interface HeaderUser {
 
 interface HeaderProps {
   user: HeaderUser;
+  /** ヘッダー左側に表示するアプリケーションタイトル（未指定時は「Difyフロントエンドアプリ」） */
+  appTitle?: string;
   errorMessage?: string | null;
 }
 
@@ -29,33 +31,27 @@ function getInitials(displayName: string): string {
   return letters.toUpperCase().slice(0, 2);
 }
 
-function formatDepartments(names: string[], codes: string[]): string {
-  if (names.length === 0 && codes.length === 0) return "未設定";
+function formatDepartments(names: string[], _codes: string[]): string {
+  if (names.length === 0 && _codes.length === 0) return "未設定";
   if (names.length > 0) {
-    return names.map((n, i) => (codes[i] ? `${n} (${codes[i]})` : n)).join(" / ");
+    return names.join(" / ");
   }
-  return codes.join(", ");
+  return "未設定";
 }
 
-export function Header({ user, errorMessage }: HeaderProps) {
+export function Header({ user, appTitle = "Difyフロントエンドアプリ", errorMessage }: HeaderProps) {
   const initials = getInitials(user.displayName);
 
   return (
     <header className="border-b bg-white" role="banner">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <div>
-          <h1 className="text-xl font-bold">社内RAG検索チャットボット</h1>
-          <p className="text-xs text-gray-500" aria-label={`所属: ${formatDepartments(user.departmentNames, user.departmentCodes)}, ユーザー: ${user.displayName}`}>
-            {formatDepartments(user.departmentNames, user.departmentCodes)}{" "}
-            / {user.displayName}
-          </p>
-          <p className="text-xs text-gray-400" aria-label={`メールアドレス: ${user.userEmail}`}>
-            {user.userEmail}
-          </p>
+          <h1 className="text-xl font-bold">{appTitle}</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right text-xs" aria-label="ユーザー情報">
             <p className="font-medium">{user.displayName}</p>
+            <p className="text-gray-500" aria-label={`メールアドレス: ${user.userEmail}`}>{user.userEmail}</p>
             <p className="text-gray-500">{formatDepartments(user.departmentNames, user.departmentCodes)}</p>
           </div>
           <Avatar aria-label={`${user.displayName}のアバター`}>

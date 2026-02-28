@@ -8,6 +8,7 @@ import {
   listConversationsForUser,
 } from "~/lib/chat/conversation-store.server";
 import { requireUserSession } from "~/lib/session/session-manager";
+import { env } from "~/lib/utils/env";
 
 type LoaderData = {
   user: {
@@ -16,6 +17,7 @@ type LoaderData = {
     departmentCodes: string[];
     departmentNames: string[];
   };
+  appTitle: string;
   conversations: ConversationRecord[];
 };
 
@@ -54,6 +56,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       departmentCodes: session.departmentCodes,
       departmentNames: session.departmentNames,
     },
+    appTitle: env.APP_TITLE,
     conversations,
   };
   return Response.json(data);
@@ -100,12 +103,12 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Conversations() {
-  const { user, conversations } = useLoaderData<LoaderData>();
+  const { user, appTitle, conversations } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Header user={user} />
+      <Header user={user} appTitle={appTitle} />
       <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">会話履歴</h2>
