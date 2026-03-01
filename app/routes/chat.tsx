@@ -195,14 +195,14 @@ export default function Chat() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isComposing, setIsComposing] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isComposingRef = useRef(false);
+  const compositionEndTimeRef = useRef<number>(0);
   const formRef = useRef<HTMLFormElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const compositionEndTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (loaderConversationId) {
@@ -524,44 +524,29 @@ export default function Chat() {
   };
 
   const handleCompositionStart = () => {
-    setIsComposing(true);
+    isComposingRef.current = true;
   };
 
   const handleCompositionEnd = () => {
-    setIsComposing(false);
-    // 変換確定直後のEnterキーを無視するため、タイムスタンプを記録
+    isComposingRef.current = false;
     compositionEndTimeRef.current = Date.now();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enterキーが押されたとき
-    if (event.key === "Enter") {
-      // IME変換中（日本語入力中）の場合は送信しない
-      if (isComposing || event.nativeEvent.isComposing) {
-        return;
-      }
-      // 変換確定直後（100ms以内）のEnterキーは無視
-      const timeSinceCompositionEnd = Date.now() - compositionEndTimeRef.current;
-      if (timeSinceCompositionEnd < 100) {
-        return;
-      }
-      // Shift+Enterの場合は改行を許可
-      if (event.shiftKey) {
-        return;
-      }
-      // Enterのみの場合は送信
-      event.preventDefault();
-      const form = formRef.current;
-      if (form) {
-        const formData = new FormData(form);
-        const query = (formData.get("query") as string | null) ?? "";
-        const trimmed = query.trim();
+    if (event.key !== "Enter") return;
+    if (event.shiftKey) return;
+    if (event.nativeEvent.isComposing || isComposingRef.current) return;
+    // Chrome では compositionend 後の keydown で isComposing が false になるため、
+    // 確定直後 100ms 以内の Enter は無視する
+    if (Date.now() - compositionEndTimeRef.current < 100) return;
 
-        if (trimmed && !isStreaming) {
-          setFormError(null);
-          void startStreaming(trimmed);
-        }
-      }
+    event.preventDefault();
+    const form = formRef.current;
+    if (!form) return;
+    const query = ((new FormData(form).get("query") as string) ?? "").trim();
+    if (query && !isStreaming) {
+      setFormError(null);
+      void startStreaming(query);
     }
   };
 
