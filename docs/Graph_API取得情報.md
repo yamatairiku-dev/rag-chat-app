@@ -14,6 +14,7 @@
 - **実装**: `app/lib/graph/user-service.ts`
 - **認証**: Bearer Token（Entra ID の Access Token）
 - **Base URL**: 環境変数 `GRAPH_API_URL`（デフォルト: `https://graph.microsoft.com/v1.0`）
+- **最適化**: `$select`クエリパラメータを使用して、実際に使用するフィールドのみを取得（パフォーマンスとセキュリティの向上）
 
 ---
 
@@ -21,19 +22,21 @@
 
 ### 取得データ（Graph API レスポンス）
 
-| フィールド | 型 | 必須 | 説明 |
-|------------|-----|------|------|
-| `id` | string | ✅ | User Object ID |
-| `userPrincipalName` | string | ✅ | UPN（例: user@company.com） |
-| `displayName` | string | ✅ | 表示名（例: 田中 太郎） |
-| `givenName` | string | ✅ | 名 |
-| `surname` | string | ✅ | 姓 |
-| `mail` | string | ✅ | メールアドレス |
-| `jobTitle` | string | - | 役職 |
-| `department` | string | - | 部署名（Azure AD のユーザー属性） |
-| `officeLocation` | string | - | オフィス所在地 |
-| `mobilePhone` | string | - | 携帯電話番号 |
-| `businessPhones` | string[] | ✅ | 業務用電話番号 |
+**重要**: `$select`クエリパラメータを使用して、実際に使用するフィールドのみを取得しています。これにより、レスポンスサイズの削減、パフォーマンスの向上、セキュリティの強化を実現しています。
+
+| フィールド | 型 | 必須 | 説明 | 取得有無 |
+|------------|-----|------|------|---------|
+| `id` | string | ✅ | User Object ID | ✅ 取得 |
+| `userPrincipalName` | string | ✅ | UPN（例: user@company.com） | ✅ 取得 |
+| `displayName` | string | ✅ | 表示名（例: 田中 太郎） | ✅ 取得 |
+| `mail` | string | ✅ | メールアドレス | ✅ 取得 |
+| `givenName` | string | - | 名 | ❌ 取得しない |
+| `surname` | string | - | 姓 | ❌ 取得しない |
+| `jobTitle` | string | - | 役職 | ❌ 取得しない |
+| `department` | string | - | 部署名（Azure AD のユーザー属性） | ❌ 取得しない |
+| `officeLocation` | string | - | オフィス所在地 | ❌ 取得しない |
+| `mobilePhone` | string | - | 携帯電話番号 | ❌ 取得しない |
+| `businessPhones` | string[] | - | 業務用電話番号 | ❌ 取得しない |
 
 ### アプリでの利用
 
@@ -51,20 +54,22 @@
 
 ### 取得データ（Graph API レスポンス）
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `@odata.context` | string | OData コンテキスト |
-| `value` | 配列 | グループオブジェクトの配列 |
+**重要**: `$select`クエリパラメータを使用して、実際に使用するフィールドのみを取得しています。これにより、レスポンスサイズの削減、パフォーマンスの向上、セキュリティの強化を実現しています。
+
+| フィールド | 型 | 説明 | 取得有無 |
+|------------|-----|------|---------|
+| `@odata.context` | string | OData コンテキスト | ✅ 自動取得 |
+| `value` | 配列 | グループオブジェクトの配列 | ✅ 自動取得 |
 
 各グループ要素（`GraphGroup`）:
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `@odata.type` | string | `#microsoft.graph.group` |
-| `id` | string | Group Object ID |
-| `displayName` | string | グループ名（例: DEPT_001_営業部） |
-| `description` | string | グループの説明（任意） |
-| `mail` | string | グループメール（任意） |
+| フィールド | 型 | 説明 | 取得有無 |
+|------------|-----|------|---------|
+| `@odata.type` | string | `#microsoft.graph.group` | ❌ 取得しない |
+| `id` | string | Group Object ID | ✅ 取得 |
+| `displayName` | string | グループ名（例: DEPT_001_営業部） | ✅ 取得 |
+| `description` | string | グループの説明（任意） | ❌ 取得しない |
+| `mail` | string | グループメール（任意） | ❌ 取得しない |
 
 ### アプリでの加工・利用
 
@@ -81,7 +86,7 @@
 
 | 抽出結果 | セッション / 利用先 | 用途 |
 |----------|----------------------|------|
-| `departmentCodes`（配列） | `UserSession.departmentCodes` | Dify API の `department_code`（カンマ区切り）、UI 表示 |
+| `departmentIds`（配列） | `UserSession.departmentIds` | 会話ストアでのユーザー識別（Graph APIのgroup.idのリスト） |
 | `departmentNames`（配列） | `UserSession.departmentNames` | ヘッダー等の表示 |
 | `groupId` | （code と同一） | 必要に応じて参照 |
 | `groupName` | （name と同一） | 必要に応じて参照 |
@@ -104,7 +109,7 @@
    → 正規表現にマッチする**すべての**グループを配列で取得
    → 部署コード・部署名の配列をセッションに保存
    ↓
-5. createSession({ userId, userEmail, displayName, departmentCode, departmentName, ... })
+5. createSession({ userId, userEmail, displayName, departmentIds, departmentNames, ... })
    ↓
 6. セッションに保存。以降はチャット・Dify API・設定画面などで利用。
 ```
@@ -120,7 +125,8 @@
 | `userId` | セッション識別、会話ストア |
 | `userEmail` | Dify API の `user` パラメータ、設定画面 |
 | `displayName` | ヘッダー、設定画面 |
-| `departmentCode` | Dify API の `inputs.department_code`、ヘッダー表示、設定・会話一覧 |
+| `departmentIds` | 会話ストアでのユーザー識別（Graph APIのgroup.idのリスト） |
+| `departmentNames` | Dify API の `inputs.department_names`（カンマ区切り）、ヘッダー表示、設定・会話一覧 |
 | `departmentName` | ヘッダー表示（部署名 (コード) の形式） |
 
 ---
@@ -148,3 +154,32 @@
 | `getUserDepartment` | `app/lib/graph/user-service.ts` | 所属部署情報取得 |
 
 詳細な API 仕様（リクエスト例・エラーコード等）は `docs/03_API仕様.md` の「Microsoft Graph API仕様」を参照してください。
+
+---
+
+## 8. パフォーマンス最適化
+
+### $selectクエリパラメータの使用
+
+本アプリでは、Microsoft Graph APIの`$select`クエリパラメータを使用して、実際に使用するフィールドのみを取得しています。
+
+**メリット**:
+- ✅ **レスポンスサイズの削減**: 不要なデータを取得しないことで、ネットワーク転送量を削減
+- ✅ **パフォーマンスの向上**: レスポンス処理時間の短縮
+- ✅ **セキュリティの強化**: 不要な個人情報を取得しないことで、情報漏洩リスクを低減
+- ✅ **API呼び出しコストの削減**: Microsoft Graph APIの使用量を最適化
+
+**実装例**:
+```typescript
+// GET /me - 必要なフィールドのみを取得
+const user = await client
+  .api('/me')
+  .select(['id', 'mail', 'userPrincipalName', 'displayName'])
+  .get();
+
+// GET /me/memberOf - 必要なフィールドのみを取得
+const response = await client
+  .api('/me/memberOf')
+  .select(['id', 'displayName'])
+  .get();
+```

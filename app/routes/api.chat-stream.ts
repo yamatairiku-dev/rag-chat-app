@@ -119,7 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
         for await (const event of client.streamMessage({
           inputs: {
             user_id: session.userEmail,
-            department_code: session.departmentNames.join(","),
+            department_names: session.departmentNames.join(","),
           },
           query: trimmedQuery,
           response_mode: "streaming",
@@ -195,7 +195,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await appendConversationMessages({
         conversationId: resolvedConversationId,
         userId: session.userId,
-        departmentCodes: session.departmentCodes,
+        departmentIds: session.departmentIds,
         messages: [
           userMessage,
           {

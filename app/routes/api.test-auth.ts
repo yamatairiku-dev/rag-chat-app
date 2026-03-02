@@ -28,7 +28,7 @@ export async function action({ request }: Route.ActionArgs) {
       userId = "test-user-123",
       userEmail = "test@example.com",
       displayName = "テストユーザー",
-      departmentCodes = ["001"],
+      departmentIds = ["001"],
       departmentNames = ["テスト部署"],
     } = body;
 
@@ -37,7 +37,7 @@ export async function action({ request }: Route.ActionArgs) {
       userId,
       userEmail,
       displayName,
-      departmentCodes: Array.isArray(departmentCodes) ? departmentCodes : [departmentCodes],
+      departmentIds: Array.isArray(departmentIds) ? departmentIds : [departmentIds],
       departmentNames: Array.isArray(departmentNames) ? departmentNames : [departmentNames],
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",

@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button";
 interface HeaderUser {
   displayName: string;
   userEmail: string;
-  departmentCodes: string[];
+  departmentIds: string[];
   departmentNames: string[];
 }
 
@@ -31,8 +31,8 @@ function getInitials(displayName: string): string {
   return letters.toUpperCase().slice(0, 2);
 }
 
-function formatDepartments(names: string[], _codes: string[]): string {
-  if (names.length === 0 && _codes.length === 0) return "未設定";
+function formatDepartments(names: string[], _ids: string[]): string {
+  if (names.length === 0 && _ids.length === 0) return "未設定";
   if (names.length > 0) {
     return names.join(" / ");
   }
@@ -52,7 +52,7 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
           <div className="text-right text-xs" aria-label="ユーザー情報">
             <p className="font-medium text-foreground">{user.displayName}</p>
             <p className="text-muted-foreground" aria-label={`メールアドレス: ${user.userEmail}`}>{user.userEmail}</p>
-            <p className="text-muted-foreground">{formatDepartments(user.departmentNames, user.departmentCodes)}</p>
+            <p className="text-muted-foreground">{formatDepartments(user.departmentNames, user.departmentIds)}</p>
           </div>
           <Avatar aria-label={`${user.displayName}のアバター`}>
             <AvatarFallback aria-hidden="true">{initials}</AvatarFallback>

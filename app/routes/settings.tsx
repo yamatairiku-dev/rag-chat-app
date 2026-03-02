@@ -8,7 +8,7 @@ type LoaderData = {
   user: {
     displayName: string;
     userEmail: string;
-    departmentCodes: string[];
+    departmentIds: string[];
     departmentNames: string[];
   };
   appTitle: string;
@@ -21,7 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     user: {
       displayName: session.displayName,
       userEmail: session.userEmail,
-      departmentCodes: session.departmentCodes,
+      departmentIds: session.departmentIds,
       departmentNames: session.departmentNames,
     },
     appTitle: env.APP_TITLE,

@@ -6,11 +6,17 @@ import { AppError, ErrorCode } from '~/types/error';
 
 /**
  * ユーザー情報取得
+ * 
+ * 必要なフィールドのみを取得してパフォーマンスとセキュリティを向上
  */
 export async function getUserInfo(accessToken: string): Promise<GraphUser> {
   try {
     const client = createGraphClient(accessToken);
-    const user = await client.api('/me').get() as GraphUser;
+    // 実際に使用するフィールドのみを取得: id, mail, userPrincipalName, displayName
+    const user = await client
+      .api('/me')
+      .select(['id', 'mail', 'userPrincipalName', 'displayName'])
+      .get() as GraphUser;
     
     if (!user || !user.id) {
       throw new AppError(
@@ -35,6 +41,8 @@ export async function getUserInfo(accessToken: string): Promise<GraphUser> {
 
 /**
  * 所属部署情報取得（正規表現にマッチするすべてのグループを配列で返す）
+ * 
+ * 必要なフィールドのみを取得してパフォーマンスとセキュリティを向上
  */
 export async function getUserDepartment(
   accessToken: string
@@ -42,7 +50,11 @@ export async function getUserDepartment(
   try {
     const client = createGraphClient(accessToken);
     console.log("[所属部署取得] Graph API呼び出し: /me/memberOf");
-    const response = await client.api('/me/memberOf').get() as MemberOfResponse;
+    // 実際に使用するフィールドのみを取得: id, displayName
+    const response = await client
+      .api('/me/memberOf')
+      .select(['id', 'displayName'])
+      .get() as MemberOfResponse;
 
     // デバッグ: 実際の応答をログに出力
     console.log("[所属部署取得] Graph API応答:", JSON.stringify(response, null, 2));

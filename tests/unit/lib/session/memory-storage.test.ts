@@ -9,7 +9,7 @@ describe("memory-storage", () => {
       userId: "user-123",
       userEmail: "test@example.com",
       displayName: "Test User",
-      departmentCodes: ["001"],
+      departmentIds: ["001"],
       departmentNames: ["テスト部署"],
       accessToken: "test-access-token",
       refreshToken: "test-refresh-token",

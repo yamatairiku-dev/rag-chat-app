@@ -30,7 +30,7 @@ const baseSession: UserSession = {
   userId: "user-123",
   userEmail: "test@example.com",
   displayName: "テストユーザー",
-  departmentCodes: ["001"],
+  departmentIds: ["001"],
   departmentNames: ["テスト部署"],
   accessToken: "test-access-token",
   refreshToken: "test-refresh-token",
@@ -66,7 +66,7 @@ describe("conversations route", () => {
         {
           conversationId: "conv-1",
           userId: "user-123",
-          departmentCodes: ["001"],
+          departmentIds: ["001"],
           createdAt: Date.now() - 10000,
           updatedAt: Date.now() - 5000,
           messages: [
@@ -90,7 +90,7 @@ describe("conversations route", () => {
       expect(data.user).toMatchObject({
         displayName: baseSession.displayName,
         userEmail: baseSession.userEmail,
-        departmentCodes: baseSession.departmentCodes,
+        departmentIds: baseSession.departmentIds,
         departmentNames: baseSession.departmentNames,
       });
       expect(data.conversations).toHaveLength(1);
@@ -101,7 +101,7 @@ describe("conversations route", () => {
       const conversations: ConversationRecord[] = Array.from({ length: 50 }, (_, i) => ({
         conversationId: `conv-${i}`,
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - i * 1000,
         messages: [],
@@ -120,7 +120,7 @@ describe("conversations route", () => {
       const conversations: ConversationRecord[] = Array.from({ length: 150 }, (_, i) => ({
         conversationId: `conv-${i}`,
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - i * 1000,
         messages: [],
@@ -139,7 +139,7 @@ describe("conversations route", () => {
       const conversations: ConversationRecord[] = Array.from({ length: 30 }, (_, i) => ({
         conversationId: `conv-${i}`,
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - i * 1000,
         messages: [],
@@ -158,7 +158,7 @@ describe("conversations route", () => {
       const conversations: ConversationRecord[] = Array.from({ length: 30 }, (_, i) => ({
         conversationId: `conv-${i}`,
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - i * 1000,
         messages: [],
@@ -177,7 +177,7 @@ describe("conversations route", () => {
       const conversations: ConversationRecord[] = Array.from({ length: 30 }, (_, i) => ({
         conversationId: `conv-${i}`,
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - i * 1000,
         messages: [],
@@ -208,7 +208,7 @@ describe("conversations route", () => {
         {
           conversationId: "conv-1",
           userId: "user-123",
-          departmentCodes: ["001"],
+          departmentIds: ["001"],
           createdAt: now - 10000,
           updatedAt: now - 5000,
           messages: [],
@@ -216,7 +216,7 @@ describe("conversations route", () => {
         {
           conversationId: "conv-2",
           userId: "user-123",
-          departmentCodes: ["001"],
+          departmentIds: ["001"],
           createdAt: now - 8000,
           updatedAt: now - 2000,
           messages: [],
@@ -239,7 +239,7 @@ describe("conversations route", () => {
       const conversation: ConversationRecord = {
         conversationId: "conv-1",
         userId: "user-123",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now(),
         updatedAt: Date.now(),
         messages: [],
@@ -322,7 +322,7 @@ describe("conversations route", () => {
       const conversation: ConversationRecord = {
         conversationId: "conv-1",
         userId: "other-user",
-        departmentCodes: ["001"],
+        departmentIds: ["001"],
         createdAt: Date.now(),
         updatedAt: Date.now(),
         messages: [],

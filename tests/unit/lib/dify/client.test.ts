@@ -60,7 +60,7 @@ describe("DifyClient", () => {
 
     const client = new DifyClient();
     const result = await client.sendMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "blocking",
       conversation_id: "",
@@ -95,7 +95,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -164,7 +164,7 @@ describe("DifyClient", () => {
     const events: unknown[] = [];
 
     for await (const event of client.streamMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "streaming",
       conversation_id: "",
@@ -190,7 +190,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -211,7 +211,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -227,7 +227,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -243,7 +243,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -265,7 +265,7 @@ describe("DifyClient", () => {
     await expect(
       (async () => {
         for await (const _ of client.streamMessage({
-          inputs: { user_id: "user@test", department_code: "001" },
+          inputs: { user_id: "user@test", department_names: "001" },
           query: "テスト",
           response_mode: "streaming",
           conversation_id: "",
@@ -290,7 +290,7 @@ describe("DifyClient", () => {
     await expect(
       (async () => {
         for await (const _ of client.streamMessage({
-          inputs: { user_id: "user@test", department_code: "001" },
+          inputs: { user_id: "user@test", department_names: "001" },
           query: "テスト",
           response_mode: "streaming",
           conversation_id: "",
@@ -341,7 +341,7 @@ describe("DifyClient", () => {
     const events: unknown[] = [];
 
     for await (const event of client.streamMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "streaming",
       conversation_id: "",
@@ -393,7 +393,7 @@ describe("DifyClient", () => {
     const events: unknown[] = [];
 
     for await (const event of client.streamMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "streaming",
       conversation_id: "",
@@ -445,7 +445,7 @@ describe("DifyClient", () => {
     const events: unknown[] = [];
 
     for await (const event of client.streamMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "streaming",
       conversation_id: "",
@@ -486,7 +486,7 @@ describe("DifyClient", () => {
     await expect(
       (async () => {
         for await (const _ of client.streamMessage({
-          inputs: { user_id: "user@test", department_code: "001" },
+          inputs: { user_id: "user@test", department_names: "001" },
           query: "テスト",
           response_mode: "streaming",
           conversation_id: "",
@@ -545,7 +545,7 @@ describe("DifyClient", () => {
     const events: unknown[] = [];
 
     for await (const event of client.streamMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "streaming",
       conversation_id: "",
@@ -595,7 +595,7 @@ describe("DifyClient", () => {
 
     const client = new DifyClient("https://dify.test/api/", "app-test-key");
     await client.sendMessage({
-      inputs: { user_id: "user@test", department_code: "001" },
+      inputs: { user_id: "user@test", department_names: "001" },
       query: "テスト",
       response_mode: "blocking",
       conversation_id: "",
@@ -625,7 +625,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -651,7 +651,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -672,7 +672,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",
@@ -693,7 +693,7 @@ describe("DifyClient", () => {
 
     await expect(
       client.sendMessage({
-        inputs: { user_id: "user@test", department_code: "001" },
+        inputs: { user_id: "user@test", department_names: "001" },
         query: "テスト",
         response_mode: "blocking",
         conversation_id: "",

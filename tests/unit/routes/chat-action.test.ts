@@ -51,7 +51,7 @@ const baseSession: UserSession = {
   userId: "user-1",
   userEmail: "user@test",
   displayName: "テスト 太郎",
-  departmentCodes: ["001"],
+  departmentIds: ["001"],
   departmentNames: ["テスト部署"],
   accessToken: "token",
   refreshToken: "refresh",

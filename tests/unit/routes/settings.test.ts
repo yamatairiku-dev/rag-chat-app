@@ -15,7 +15,7 @@ const baseSession: UserSession = {
   userId: "user-123",
   userEmail: "test@example.com",
   displayName: "テストユーザー",
-  departmentCodes: ["001"],
+  departmentIds: ["001"],
   departmentNames: ["テスト部署"],
   accessToken: "test-access-token",
   refreshToken: "test-refresh-token",
@@ -44,7 +44,7 @@ describe("settings route", () => {
       expect(data.user).toMatchObject({
         displayName: baseSession.displayName,
         userEmail: baseSession.userEmail,
-        departmentCodes: baseSession.departmentCodes,
+        departmentIds: baseSession.departmentIds,
         departmentNames: baseSession.departmentNames,
       });
     });

@@ -15,7 +15,7 @@ export interface TestUserSession {
   userId?: string;
   userEmail?: string;
   displayName?: string;
-  departmentCodes?: string[];
+  departmentIds?: string[];
   departmentNames?: string[];
 }
 
@@ -26,7 +26,7 @@ const DEFAULT_TEST_USER: TestUserSession = {
   userId: 'test-user-123',
   userEmail: 'test@example.com',
   displayName: 'テストユーザー',
-  departmentCodes: ['001'],
+  departmentIds: ['001'],
   departmentNames: ['テスト部署'],
 };
 
@@ -54,7 +54,7 @@ export async function setupAuthenticatedSession(
       userId: user.userId || DEFAULT_TEST_USER.userId,
       userEmail: user.userEmail || DEFAULT_TEST_USER.userEmail,
       displayName: user.displayName || DEFAULT_TEST_USER.displayName,
-      departmentCodes: user.departmentCodes ?? DEFAULT_TEST_USER.departmentCodes,
+      departmentIds: user.departmentIds ?? DEFAULT_TEST_USER.departmentIds,
       departmentNames: user.departmentNames ?? DEFAULT_TEST_USER.departmentNames,
     },
   });

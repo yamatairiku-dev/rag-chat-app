@@ -11,8 +11,8 @@ export interface UserSession {
   /** 表示名 (例: 田中 太郎) */
   displayName: string;
   
-  /** 所属コードの配列（グループ ID のリスト） */
-  departmentCodes: string[];
+  /** 所属グループIDの配列（Graph APIのgroup.idのリスト） */
+  departmentIds: string[];
 
   /** 所属部署名の配列（表示名のリスト） */
   departmentNames: string[];

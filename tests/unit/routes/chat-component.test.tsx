@@ -66,7 +66,7 @@ describe("Chat component", () => {
     user: {
       displayName: "テストユーザー",
       userEmail: "test@example.com",
-      departmentCodes: ["001"],
+      departmentIds: ["001"],
       departmentNames: ["テスト部署"],
       departmentName: "テスト部署",
     },

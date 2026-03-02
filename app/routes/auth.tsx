@@ -69,7 +69,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       userId: userInfo.id,
       userEmail: userInfo.mail || userInfo.userPrincipalName,
       displayName: userInfo.displayName,
-      departmentCodes: departments.map((d) => d.code),
+      departmentIds: departments.map((d) => d.code),
       departmentNames: departments.map((d) => d.name),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,

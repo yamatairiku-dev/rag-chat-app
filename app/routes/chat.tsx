@@ -22,7 +22,7 @@ type LoaderData = {
   user: {
     displayName: string;
     userEmail: string;
-    departmentCodes: string[];
+    departmentIds: string[];
     departmentNames: string[];
   };
   appTitle: string;
@@ -88,7 +88,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       user: {
         displayName: session.displayName,
         userEmail: session.userEmail,
-        departmentCodes: session.departmentCodes,
+        departmentIds: session.departmentIds,
         departmentNames: session.departmentNames,
       },
       appTitle: env.APP_TITLE,
@@ -138,7 +138,7 @@ export async function action({ request }: Route.ActionArgs) {
     const response = await client.sendMessage({
       inputs: {
         user_id: session.userEmail,
-        department_code: session.departmentNames.join(","),
+        department_names: session.departmentNames.join(","),
       },
       query: trimmedQuery,
       response_mode: "blocking",

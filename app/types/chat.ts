@@ -43,8 +43,8 @@ export interface ChatSession {
   updatedAt: number;
   /** ユーザーID */
   userId: string;
-  /** 所属コードの配列 */
-  departmentCodes: string[];
+  /** 所属グループIDの配列 */
+  departmentIds: string[];
 }
 
 /**
@@ -61,7 +61,7 @@ export interface ChatLog {
   userId: string;
   /** ユーザーEmail */
   userEmail: string;
-  /** 所属コードの配列（カンマ区切りで記録することも可） */
+  /** 所属部署名（カンマ区切り文字列、Dify APIに送信される値） */
   departmentCode: string;
   /** ユーザーの質問 */
   query: string;

@@ -7,7 +7,7 @@ describe("Header", () => {
   const baseUser = {
     displayName: "テストユーザー",
     userEmail: "test@example.com",
-    departmentCodes: ["001"],
+    departmentIds: ["001"],
     departmentNames: ["テスト部署"],
   };
 
@@ -58,8 +58,8 @@ describe("Header", () => {
       // 表示形式は "テスト部署 (001)" なので複数ノードにマッチする場合は getAllByText を使用
       const departmentTexts = screen.getAllByText(/テスト部署/);
       expect(departmentTexts.length).toBeGreaterThan(0);
-      const departmentCodes = screen.getAllByText(/001/);
-      expect(departmentCodes.length).toBeGreaterThan(0);
+      const departmentIds = screen.getAllByText(/001/);
+      expect(departmentIds.length).toBeGreaterThan(0);
     });
 
     it("部署名がない場合は部署コードのみが表示される", () => {

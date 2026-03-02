@@ -36,7 +36,7 @@ Content-Type: application/json
 {
   inputs: {
     user_id: string;        // ユーザーのEmailアドレス
-    department_code: string; // 所属部署コード
+    department_names: string; // 所属部署名（カンマ区切り）
   },
   query: string;            // ユーザーの質問（トリム済み）
   response_mode: "streaming" | "blocking",
@@ -66,7 +66,7 @@ POST {DIFY_API_URL}/chat-messages
 {
   inputs: {
     user_id: session.userEmail,        // セッションから取得したユーザーEmail
-    department_code: session.departmentCode, // セッションから取得した部署コード
+    department_names: session.departmentNames.join(","), // セッションから取得した部署名（カンマ区切り）
   },
   query: trimmedQuery,                 // ユーザーが入力した質問（前後の空白を削除）
   response_mode: "streaming",
@@ -81,7 +81,7 @@ POST {DIFY_API_URL}/chat-messages
 {
   "inputs": {
     "user_id": "tanaka@company.com",
-    "department_code": "001"
+    "department_names": "ZAA535-A,ZAA090-A"
   },
   "query": "年次有給休暇の取得方法を教えてください",
   "response_mode": "streaming",
@@ -96,7 +96,7 @@ POST {DIFY_API_URL}/chat-messages
         for await (const event of client.streamMessage({
           inputs: {
             user_id: session.userEmail,
-            department_code: session.departmentCode,
+            department_names: session.departmentNames.join(","),
           },
           query: trimmedQuery,
           response_mode: "streaming",
@@ -126,7 +126,7 @@ POST {DIFY_API_URL}/chat-messages
 {
   inputs: {
     user_id: session.userEmail,        // セッションから取得したユーザーEmail
-    department_code: session.departmentCode, // セッションから取得した部署コード
+    department_names: session.departmentNames.join(","), // セッションから取得した部署名（カンマ区切り）
   },
   query: trimmedQuery,                 // ユーザーが入力した質問（前後の空白を削除）
   response_mode: "blocking",
@@ -141,7 +141,7 @@ POST {DIFY_API_URL}/chat-messages
 {
   "inputs": {
     "user_id": "tanaka@company.com",
-    "department_code": "001"
+    "department_names": "ZAA535-A,ZAA090-A"
   },
   "query": "年次有給休暇の取得方法を教えてください",
   "response_mode": "blocking",
@@ -156,7 +156,7 @@ POST {DIFY_API_URL}/chat-messages
     const response = await client.sendMessage({
       inputs: {
         user_id: session.userEmail,
-        department_code: session.departmentCode,
+        department_names: session.departmentNames.join(","),
       },
       query: trimmedQuery,
       response_mode: "blocking",
@@ -174,7 +174,7 @@ POST {DIFY_API_URL}/chat-messages
 セッションから取得される情報：
 
 - **`session.userEmail`**: Entra ID認証時に取得したユーザーのEmailアドレス
-- **`session.departmentCode`**: Graph APIから取得した部署コード
+- **`session.departmentNames`**: Graph APIから取得した部署名の配列（カンマ区切りで`department_names`として送信）
 - **`session.userId`**: ユーザーの一意ID
 
 ### フォームデータ
@@ -367,7 +367,7 @@ logger.debug("Dify API request", {
 | 項目 | 値 | 取得元 |
 |------|-----|--------|
 | `inputs.user_id` | ユーザーEmail | `session.userEmail` |
-| `inputs.department_code` | 部署コード | `session.departmentCode` |
+| `inputs.department_names` | 部署名（カンマ区切り） | `session.departmentNames.join(",")` |
 | `query` | ユーザーの質問 | フォーム入力（トリム済み） |
 | `response_mode` | `"streaming"` または `"blocking"` | 固定値 |
 | `conversation_id` | 会話ID | フォームまたは空文字列 |
