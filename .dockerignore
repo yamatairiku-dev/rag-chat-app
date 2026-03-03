@@ -1,4 +1,56 @@
+# 依存関係・ビルド成果物（既存）
 .react-router
 build
 node_modules
+
+# 環境変数（秘密・設定の混入防止）
+.env
+.env.*
+
+# ログ
+logs
+*.log
+
+# テスト・カバレッジ・E2E（本番ビルドに不要）
+tests
+coverage
+.playwright
+test-results
+playwright-report
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# バージョン管理（コンテキスト削減）
+.git
+.gitignore
+.gitattributes
+
+# ドキュメント・メモ（イメージサイズ削減）
 README.md
+docs
+*.md
+
+# IDE・エディタ
+.vscode
+.idea
+.cursor
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# その他（開発・一時ファイル）
+dist
+.cache
+bundle-chat.json
+lighthouse-report.json
+*.tmp
+.temp
+scripts
+AGENTS.md
+NEXT_STEPS_PLAN.md
+DEV_CHECK_RESULT.md
