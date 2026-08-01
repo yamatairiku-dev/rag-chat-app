@@ -20,7 +20,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export default function ErrorPage() {
-  const { title, message, status } = useLoaderData<Route.LoaderData>();
+  const { title, message, status } = useLoaderData<typeof loader>();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
