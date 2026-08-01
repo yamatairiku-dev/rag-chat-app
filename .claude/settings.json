@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"$f\" in *.ts|*.tsx) OUT=$(npm run typecheck 2>&1); STATUS=$?; if [ $STATUS -ne 0 ]; then MSG=$(printf '%s' \"$OUT\" | tail -20); jq -n --arg msg \"$MSG\" '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:(\"Typecheck failed:\\n\" + $msg)}}'; fi ;; esac; }",
+            "timeout": 60,
+            "statusMessage": "Typechecking..."
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "rag-chat-app",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "runServices": [
+    "dev"
+  ],
+  "shutdownAction": "stopCompose",
+  "remoteUser": "node",
+  "remoteEnv": {
+    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "postCreateCommand": "sudo chown -R node:node /workspace/node_modules && { test -f .env || cp .env.example .env; } && npm ci && sudo npx playwright install-deps chromium && npx playwright install chromium",
+  "postStartCommand": "pgrep -f '[r]eact-router dev' >/dev/null || nohup npm run dev -- --port 3000 >/tmp/siryou-mite-dev.log 2>&1 &",
+  "forwardPorts": [
+    3000,
+    5173
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "rag-chat-app Web",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "firsttris.vscode-jest-runner",
+        "github.vscode-pull-request-github",
+        "yzhang.markdown-all-in-one",
+        "shd101wyy.markdown-preview-enhanced",
+        "ionutvmi.path-autocomplete",
+        "seatonjiang.gitmoji-vscode",
+        "kisstkondoros.vscode-gutter-preview",
+        "oderwat.indent-rainbow",
+        "clemenspeters.format-json",
+        "eriklynd.json-tools",
+        "mechatroner.rainbow-csv",
+        "humao.rest-client",
+        "shardulm94.trailing-spaces",
+        "mhutchie.git-graph",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}

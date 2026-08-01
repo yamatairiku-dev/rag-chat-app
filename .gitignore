@@ -21,7 +21,9 @@ lighthouse-report.json
 # IDE
 .vscode/
 .idea/
-.claude/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+CLAUDE.local.md
 *.swp
 *.swo
 

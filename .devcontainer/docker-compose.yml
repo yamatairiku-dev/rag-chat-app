@@ -1,0 +1,35 @@
+name: rag-chat-app-local
+
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    working_dir: /workspace
+    command: sleep infinity
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-..}:/workspace:cached
+      - node_modules:/workspace/node_modules
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:5173:5173"
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      APP_ORIGIN: http://localhost:3000
+      AUTH_MODE: dev
+    networks:
+      - default
+      - dify_network
+
+networks:
+  dify_network:
+    external: true
+    name: docker_default
+
+volumes:
+  node_modules:
