@@ -2,6 +2,8 @@ name: rag-chat-app-local
 
 services:
   dev:
+    security_opt:
+      - seccomp=unconfined
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
