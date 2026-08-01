@@ -47,6 +47,30 @@ function verifySessionId(signedSessionId: string): string | null {
 }
 
 /**
+ * 直近のセッションリセット時刻（SESSION_RESET_HOUR時）のタイムスタンプを求める
+ *
+ * 本日のリセット時刻がまだ来ていない場合は前日のリセット時刻を返す
+ */
+function getMostRecentResetBoundary(now: number, resetHour: number): number {
+  const nowDate = new Date(now);
+  const boundary = new Date(
+    nowDate.getFullYear(),
+    nowDate.getMonth(),
+    nowDate.getDate(),
+    resetHour,
+    0,
+    0,
+    0,
+  );
+
+  if (boundary.getTime() > now) {
+    boundary.setDate(boundary.getDate() - 1);
+  }
+
+  return boundary.getTime();
+}
+
+/**
  * Cookieを解析
  */
 function parseCookie(cookieHeader: string, name: string): string | null {
@@ -130,9 +154,16 @@ export async function getSessionWithId(request: Request): Promise<{ session: Use
     return null;
   }
   
-  // セッションタイムアウトチェック
+  // セッションタイムアウトチェック（アクセスがない期間が一定を超えた場合）
   const now = Date.now();
   if (now - session.lastAccessedAt > env.SESSION_MAX_AGE) {
+    await storage.delete(sessionId);
+    return null;
+  }
+
+  // 1日1回、SESSION_RESET_HOURの時刻を過ぎたら強制的にセッションを無効化する
+  // （常にアクセスし続けるセッションが無期限に有効であり続けるのを防ぐ）
+  if (session.createdAt < getMostRecentResetBoundary(now, env.SESSION_RESET_HOUR)) {
     await storage.delete(sessionId);
     return null;
   }

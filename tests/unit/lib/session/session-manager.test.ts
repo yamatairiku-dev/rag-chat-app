@@ -5,6 +5,7 @@ vi.mock("~/lib/utils/env", () => ({
   env: {
     SESSION_SECRET: "test-session-secret-key-for-testing-purposes-only",
     SESSION_MAX_AGE: 86400000, // 24時間
+    SESSION_RESET_HOUR: 0,
     COOKIE_HTTP_ONLY: "true",
     COOKIE_SAME_SITE: "lax",
     COOKIE_SECURE: "false",
@@ -351,6 +352,94 @@ describe("session-manager", () => {
 
       expect(result).toBeNull();
       expect(memoryStorage.delete).toHaveBeenCalledWith(sessionId);
+    });
+
+    it("異常系: アクセスが継続していてもリセット時刻（SESSION_RESET_HOUR）を過ぎたセッションはnullを返す", async () => {
+      vi.useFakeTimers();
+      try {
+        // 2026-01-15 10:00 に固定 → 直近のリセット境界は 2026-01-15 00:00
+        vi.setSystemTime(new Date(2026, 0, 15, 10, 0, 0, 0));
+
+        const mockSession = {
+          userId: "user-123",
+          userEmail: "test@example.com",
+          displayName: "Test User",
+          departmentIds: ["001"],
+          departmentNames: ["テスト部署"],
+          accessToken: "test-access-token",
+          refreshToken: "test-refresh-token",
+          tokenExpiresAt: Date.now() + 3600000,
+          createdAt: new Date(2026, 0, 14, 23, 0, 0, 0).getTime(), // リセット境界より前に作成
+          lastAccessedAt: Date.now() - 1000, // 直近までアクセスしている（スライディングウィンドウ内）
+        };
+
+        const sessionId = "test-session-id";
+        const crypto = await import("crypto");
+        const createHmac = crypto.createHmac;
+        const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+          .update(sessionId)
+          .digest("hex");
+        const signedSessionId = `${sessionId}.${signature}`;
+
+        (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+        const request = new Request("http://localhost:3000/chat", {
+          headers: {
+            Cookie: `session=${signedSessionId}`,
+          },
+        });
+
+        const result = await getSessionWithId(request);
+
+        expect(result).toBeNull();
+        expect(memoryStorage.delete).toHaveBeenCalledWith(sessionId);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("正常系: リセット境界より後に作成されたセッションはリセット時刻を過ぎても有効", async () => {
+      vi.useFakeTimers();
+      try {
+        // 2026-01-15 10:00 に固定 → 直近のリセット境界は 2026-01-15 00:00
+        vi.setSystemTime(new Date(2026, 0, 15, 10, 0, 0, 0));
+
+        const mockSession = {
+          userId: "user-123",
+          userEmail: "test@example.com",
+          displayName: "Test User",
+          departmentIds: ["001"],
+          departmentNames: ["テスト部署"],
+          accessToken: "test-access-token",
+          refreshToken: "test-refresh-token",
+          tokenExpiresAt: Date.now() + 3600000,
+          createdAt: new Date(2026, 0, 15, 1, 0, 0, 0).getTime(), // リセット境界より後に作成
+          lastAccessedAt: Date.now() - 1000,
+        };
+
+        const sessionId = "test-session-id";
+        const crypto = await import("crypto");
+        const createHmac = crypto.createHmac;
+        const signature = createHmac("sha256", "test-session-secret-key-for-testing-purposes-only")
+          .update(sessionId)
+          .digest("hex");
+        const signedSessionId = `${sessionId}.${signature}`;
+
+        (memoryStorage.get as ReturnType<typeof vi.fn>).mockReturnValue(mockSession);
+
+        const request = new Request("http://localhost:3000/chat", {
+          headers: {
+            Cookie: `session=${signedSessionId}`,
+          },
+        });
+
+        const result = await getSessionWithId(request);
+
+        expect(result).not.toBeNull();
+        expect(result?.session).toMatchObject({ userId: "user-123" });
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("正常系: セッションの最終アクセス時刻を更新する", async () => {
