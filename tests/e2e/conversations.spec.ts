@@ -120,11 +120,11 @@ test.describe('会話履歴機能', () => {
     const header = page.locator('header');
     await expect(header).toBeVisible();
     
-    // アプリケーションタイトルが表示されることを確認
-    const title = page.locator('text=社内RAG検索チャットボット');
+    // APP_TITLEで設定されたアプリケーションタイトルが表示されることを確認
+    const title = header.getByRole('heading', { level: 1 });
     await expect(title).toBeVisible();
+    await expect(title).not.toHaveText('');
   });
 });
-
 
 

@@ -53,9 +53,6 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
             <Link to="/chat">チャット</Link>
           </Button>
           <Button asChild variant="ghost" size="sm">
-            <Link to="/conversations">会話履歴</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
             <Link to="/settings">設定</Link>
           </Button>
         </nav>
@@ -85,4 +82,3 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
     </header>
   );
 }
-

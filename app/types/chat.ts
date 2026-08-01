@@ -28,6 +28,18 @@ export interface Message {
 }
 
 /**
+ * 会話履歴の一覧表示に使用する要約
+ */
+export interface ConversationSummary {
+  /** 会話ID */
+  conversationId: string;
+  /** 最初の質問を基にした表示タイトル */
+  title: string;
+  /** 更新日時 (Unix timestamp) */
+  updatedAt: number;
+}
+
+/**
  * チャットセッション
  */
 export interface ChatSession {
@@ -86,4 +98,3 @@ export interface ChatLog {
     }>;
   };
 }
-

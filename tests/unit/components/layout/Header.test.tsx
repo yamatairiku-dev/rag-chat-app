@@ -139,6 +139,18 @@ describe("Header", () => {
     });
   });
 
+  describe("ナビゲーション", () => {
+    it("会話履歴は上部ナビゲーションに表示しない", () => {
+      renderWithRouter(<Header user={baseUser} />);
+
+      expect(
+        screen.queryByRole("link", { name: "会話履歴" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "チャット" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "設定" })).toBeInTheDocument();
+    });
+  });
+
   describe("エラーメッセージの表示", () => {
     it("エラーメッセージがある場合は表示される", () => {
       renderWithRouter(<Header user={baseUser} errorMessage="エラーが発生しました" />);

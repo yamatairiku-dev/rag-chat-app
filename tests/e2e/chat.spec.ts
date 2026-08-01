@@ -81,17 +81,14 @@ test.describe('チャット機能', () => {
   });
 
   test('初期状態でメッセージが空の場合の表示', async ({ page }) => {
-    // メッセージが空の場合の表示を確認
-    const emptyMessage = page.locator('text=最初の質問を入力してください');
-    
-    // メッセージが空の場合、ガイダンスメッセージが表示されることを確認
-    // 実際の実装に応じて確認方法を調整してください
-    const messagesContainer = page.locator('.flex-1.overflow-y-auto');
-    if (await messagesContainer.isVisible()) {
-      // メッセージリストが空の場合の表示を確認
-      const emptyState = page.locator('text=最初の質問を入力してください');
-      // 空の状態のメッセージが表示される可能性がある
-    }
+    const messagesContainer = page.getByRole('log', {
+      name: 'チャットメッセージ',
+    });
+
+    await expect(messagesContainer).toBeVisible();
+    await expect(
+      messagesContainer.getByText('最初の質問を入力してください。'),
+    ).toBeVisible();
   });
 
   test('ヘッダーにユーザー情報が表示される', async ({ page }) => {
@@ -99,9 +96,10 @@ test.describe('チャット機能', () => {
     const header = page.locator('header');
     await expect(header).toBeVisible();
     
-    // アプリケーションタイトルが表示されることを確認
-    const title = page.locator('text=社内RAG検索チャットボット');
+    // APP_TITLEで設定されたアプリケーションタイトルが表示されることを確認
+    const title = header.getByRole('heading', { level: 1 });
     await expect(title).toBeVisible();
+    await expect(title).not.toHaveText('');
     
     // ログアウトボタンが表示されることを確認
     const logoutButton = page.locator('button:has-text("ログアウト")');
@@ -137,6 +135,5 @@ test.describe('チャット機能', () => {
     // このテストは、基本的なUIの動作を確認する
   });
 });
-
 
 

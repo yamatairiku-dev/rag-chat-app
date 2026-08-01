@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/chat";
 import { Form, redirect, useLoaderData } from "react-router";
-import type { Message } from "~/types/chat";
+import type { ConversationSummary, Message } from "~/types/chat";
 import { ensureValidToken } from "~/lib/session/token-refresh";
 import {
   getSessionWithId,
@@ -13,9 +13,13 @@ import { AppError, ErrorCode } from "~/types/error";
 import { DifyClient } from "~/lib/dify/client";
 import { env } from "~/lib/utils/env";
 import { ConversationManager } from "~/lib/chat/conversation-manager";
-import { getConversation } from "~/lib/chat/conversation-store.server";
+import {
+  getConversation,
+  listConversationsForUser,
+} from "~/lib/chat/conversation-store.server";
 import { Header } from "~/components/layout/Header";
 import { ChatMessage } from "~/components/chat/ChatMessage";
+import { ConversationSidebar } from "~/components/chat/ConversationSidebar";
 import { logger } from "~/lib/logging/logger";
 
 type LoaderData = {
@@ -28,7 +32,15 @@ type LoaderData = {
   appTitle: string;
   conversationId?: string;
   initialMessages?: Message[];
+  conversations: ConversationSummary[];
 };
+
+function createConversationTitle(messages: { role: string; content: string }[]) {
+  const firstUserMessage = messages.find((message) => message.role === "user");
+  const title = firstUserMessage?.content.trim() || "新しい会話";
+
+  return title.length > 40 ? `${title.slice(0, 40)}…` : title;
+}
 
 export async function loader({ request }: Route.LoaderArgs) {
   try {
@@ -50,6 +62,16 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     const url = new URL(request.url);
     const conversationId = url.searchParams.get("conversationId") ?? undefined;
+    const conversationRecords = await listConversationsForUser(session.userId);
+    const conversations = conversationRecords
+      .slice()
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 50)
+      .map((conversation) => ({
+        conversationId: conversation.conversationId,
+        title: createConversationTitle(conversation.messages),
+        updatedAt: conversation.updatedAt,
+      }));
 
     let initialMessages: Message[] | undefined;
 
@@ -79,6 +101,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       appTitle: env.APP_TITLE,
       conversationId,
       initialMessages,
+      conversations,
     };
     return Response.json(data);
   } catch (error) {
@@ -170,8 +193,13 @@ export function meta(_: Route.MetaArgs) {
 }
 
 export default function Chat() {
-  const { user, appTitle, initialMessages, conversationId: loaderConversationId } =
-    useLoaderData<LoaderData>();
+  const {
+    user,
+    appTitle,
+    initialMessages,
+    conversationId: loaderConversationId,
+    conversations,
+  } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<Message[]>(
     () => initialMessages ?? [],
   );
@@ -180,6 +208,9 @@ export default function Chat() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [conversationSummaries, setConversationSummaries] = useState(
+    () => conversations,
+  );
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const isComposingRef = useRef(false);
@@ -190,16 +221,21 @@ export default function Chat() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setMessages(initialMessages ?? []);
+
     if (loaderConversationId) {
+      setConversationId(loaderConversationId);
       ConversationManager.setConversationId(loaderConversationId);
       return;
     }
 
     const storedId = ConversationManager.getConversationId();
-    if (storedId) {
-      setConversationId(storedId);
-    }
-  }, [loaderConversationId]);
+    setConversationId(storedId ?? "");
+  }, [initialMessages, loaderConversationId]);
+
+  useEffect(() => {
+    setConversationSummaries(conversations);
+  }, [conversations]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -293,6 +329,20 @@ export default function Chat() {
             : message,
         ),
       );
+      setConversationSummaries((prev) => {
+        const existing = prev.find(
+          (conversation) => conversation.conversationId === nextId,
+        );
+        if (existing) {
+          return prev;
+        }
+
+        const title = query.length > 40 ? `${query.slice(0, 40)}…` : query;
+        return [
+          { conversationId: nextId, title, updatedAt: Date.now() },
+          ...prev,
+        ];
+      });
     };
 
     try {
@@ -547,10 +597,25 @@ export default function Chat() {
     void startStreaming(query);
   };
 
+  const handleNewConversation = () => {
+    abortControllerRef.current?.abort();
+    ConversationManager.clearConversationId();
+    setConversationId("");
+    setMessages([]);
+    setFormError(null);
+    setIsStreaming(false);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header user={user} appTitle={appTitle} errorMessage={formError} />
-      <main className="container mx-auto flex w-full flex-1 flex-col px-4 py-6" role="main">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <ConversationSidebar
+          conversations={conversationSummaries}
+          activeConversationId={conversationId || loaderConversationId}
+          onNewConversation={handleNewConversation}
+        />
+        <main className="flex min-w-0 flex-1 flex-col px-4 py-6 lg:px-6" role="main">
         <div
           className="flex-1 overflow-y-auto rounded-lg bg-card border border-border p-6 shadow"
           role="log"
@@ -625,7 +690,8 @@ export default function Chat() {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

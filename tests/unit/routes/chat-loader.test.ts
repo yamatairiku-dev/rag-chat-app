@@ -14,6 +14,7 @@ vi.mock("~/lib/session/token-refresh", () => ({
 
 vi.mock("~/lib/chat/conversation-store.server", () => ({
   getConversation: vi.fn(),
+  listConversationsForUser: vi.fn(),
 }));
 
 vi.mock("~/lib/logging/logger", () => ({
@@ -48,11 +49,15 @@ vi.mock("~/lib/utils/env", () => ({
 import { loader } from "~/routes/chat";
 import { getSessionWithId } from "~/lib/session/session-manager";
 import { ensureValidToken } from "~/lib/session/token-refresh";
-import { getConversation } from "~/lib/chat/conversation-store.server";
+import {
+  getConversation,
+  listConversationsForUser,
+} from "~/lib/chat/conversation-store.server";
 
 const getSessionWithIdMock = vi.mocked(getSessionWithId);
 const ensureValidTokenMock = vi.mocked(ensureValidToken);
 const getConversationMock = vi.mocked(getConversation);
+const listConversationsForUserMock = vi.mocked(listConversationsForUser);
 
 const baseSession: UserSession = {
   userId: "user-123",
@@ -74,6 +79,7 @@ function createRequest(url: string = "http://localhost/chat") {
 describe("chat route loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listConversationsForUserMock.mockResolvedValue([]);
   });
 
   it("正常系: セッションが存在する場合はユーザー情報を返す", async () => {
@@ -94,6 +100,64 @@ describe("chat route loader", () => {
       departmentIds: baseSession.departmentIds,
       departmentNames: baseSession.departmentNames,
     });
+    expect(data.conversations).toEqual([]);
+    expect(listConversationsForUserMock).toHaveBeenCalledWith(baseSession.userId);
+  });
+
+  it("正常系: 更新日時順の会話履歴要約を返す", async () => {
+    getSessionWithIdMock.mockResolvedValue({
+      session: baseSession,
+      sessionId: "session-1",
+    });
+    ensureValidTokenMock.mockResolvedValue(baseSession);
+    listConversationsForUserMock.mockResolvedValue([
+      {
+        conversationId: "conv-old",
+        userId: baseSession.userId,
+        departmentIds: [],
+        createdAt: 100,
+        updatedAt: 200,
+        messages: [
+          {
+            id: "message-old",
+            role: "user",
+            content: "古い質問",
+            timestamp: 100,
+          },
+        ],
+      },
+      {
+        conversationId: "conv-new",
+        userId: baseSession.userId,
+        departmentIds: [],
+        createdAt: 200,
+        updatedAt: 300,
+        messages: [
+          {
+            id: "message-new",
+            role: "user",
+            content: "新しい質問",
+            timestamp: 200,
+          },
+        ],
+      },
+    ]);
+
+    const response = await loader({ request: createRequest() } as never);
+    const data = await response.json();
+
+    expect(data.conversations).toEqual([
+      {
+        conversationId: "conv-new",
+        title: "新しい質問",
+        updatedAt: 300,
+      },
+      {
+        conversationId: "conv-old",
+        title: "古い質問",
+        updatedAt: 200,
+      },
+    ]);
   });
 
   it("異常系: セッションが存在しない場合はリダイレクトする", async () => {
@@ -276,7 +340,6 @@ describe("chat route loader", () => {
     });
   });
 });
-
 
 
 

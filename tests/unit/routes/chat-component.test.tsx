@@ -9,6 +9,7 @@ vi.mock("~/lib/chat/conversation-manager", () => ({
   ConversationManager: {
     setConversationId: vi.fn(),
     getConversationId: vi.fn(),
+    clearConversationId: vi.fn(),
   },
 }));
 
@@ -72,6 +73,7 @@ describe("Chat component", () => {
     },
     conversationId: undefined,
     initialMessages: undefined,
+    conversations: [],
   };
 
   it("正常系: ユーザー情報が表示される", async () => {

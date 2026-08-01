@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { setupAuthenticatedSession } from './helpers/auth';
 
 /**
  * 認証フローのE2Eテスト
@@ -20,44 +21,24 @@ test.describe('認証フロー', () => {
     await page.waitForURL(/\/auth\/login|login\.microsoftonline\.com/, { timeout: 5000 });
   });
 
-  test('ログイン画面にアクセスすると認証URLにリダイレクトされる', async ({ page }) => {
-    // /auth/loginに直接アクセス
-    await page.goto('/auth/login');
-    
-    // Entra IDの認証URLにリダイレクトされることを確認
-    // リダイレクト先はMicrosoftの認証ページになる
-    await page.waitForURL(/login\.microsoftonline\.com|microsoft\.com/, { timeout: 5000 });
+  test('ログイン操作で認証URLにリダイレクトされる', async ({ page }) => {
+    // 外部のMicrosoft画面までは開かず、アプリが返すリダイレクト先を確認する
+    const response = await page.request.get('/auth/login?action=redirect', {
+      maxRedirects: 0,
+    });
+
+    expect(response.status()).toBe(302);
+    expect(response.headers().location).toMatch(
+      /^https:\/\/login\.microsoftonline\.com\//,
+    );
   });
 
   test('認証後、チャット画面にリダイレクトされる', async ({ page, context }) => {
-    // 注意: このテストは実際の認証フローをシミュレートする必要があります
-    // テスト環境では、認証をモックするか、テスト用の認証情報を使用してください
-    
-    // セッションCookieを設定して認証済み状態をシミュレート
-    // 実際の実装では、テスト用の認証ヘルパーを使用することを推奨
-    await context.addCookies([
-      {
-        name: 'session',
-        value: 'test-session-id',
-        domain: 'localhost',
-        path: '/',
-        httpOnly: true,
-        secure: false,
-        sameSite: 'Lax',
-      },
-    ]);
+    await setupAuthenticatedSession(page, context);
+    await page.goto('/chat');
 
-    // 認証コールバックをシミュレート
-    // 実際の実装では、モックサーバーまたはテスト用の認証エンドポイントを使用
-    await page.goto('/auth?code=test-auth-code');
-    
-    // エラーページが表示される可能性があるため、エラーハンドリングを確認
-    // 実際の認証が成功した場合、/chatにリダイレクトされる
-    const currentUrl = page.url();
-    
-    // 認証が成功した場合のリダイレクト先を確認
-    // 実際のテストでは、モック認証を使用して成功ケースをテストすることを推奨
-    expect(currentUrl).toMatch(/\/chat|\/auth/);
+    await expect(page).toHaveURL(/\/chat$/);
+    await expect(page.getByRole('main')).toBeVisible();
   });
 
   test('ログアウトが動作する', async ({ page, context }) => {
@@ -98,6 +79,5 @@ test.describe('認証フロー', () => {
     await page.waitForURL(/\/auth\/login|login\.microsoftonline\.com/, { timeout: 10000 });
   });
 });
-
 
 
