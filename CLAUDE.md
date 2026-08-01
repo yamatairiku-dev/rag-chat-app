@@ -13,7 +13,7 @@ This is an internal RAG search chatbot (社内 RAG 検索チャットボット):
 
 - **No formatter is configured** (no Prettier/Biome config — ESLint was added later, see below), and AGENTS.md explicitly says not to introduce new style tools — follow the existing 2-space/double-quote/trailing-comma convention by hand, don't add more tooling unless asked.
 - **Never read or print the contents of `.env`** — it holds real Entra/Dify secrets, not example values.
-- The root directory has ~30 historical AI-generated status/report files (`COMPLETE_ACHIEVEMENT_REPORT.md`, `FINAL_SUMMARY.md`, `TEST_STATUS.md`, etc.) and Japanese-named progress notes. These are stale snapshots, not living docs — ignore them as context and don't create new ones; real docs live in `docs/` and `ガイド/`.
+- ~38 historical AI-generated status/report files (`COMPLETE_ACHIEVEMENT_REPORT.md`, `FINAL_SUMMARY.md`, `TEST_STATUS.md`, etc.) and Japanese-named progress notes were archived from the repo root into `docs/archive/`. These are stale snapshots, not living docs — don't create new ones at the root; real docs live in `docs/` and `ガイド/`.
 - The two Dockerfiles pin different Node patch versions (root `Dockerfile`: `node:24.14-alpine`, `.devcontainer/Dockerfile`: `node:24.18.0-bookworm`) — both track Node 24, but keep this in mind if a build-vs-devcontainer discrepancy shows up.
 - The devcontainer's `docker-compose.yml` joins an external `docker_default` network aliased `dify_network` and sets `AUTH_MODE=dev` — it expects a locally-running Dify stack alongside it for full end-to-end testing.
 - Commit messages mix English and Japanese, sometimes with `feat:`/`fix:` prefixes — match whatever style the surrounding recent commits use rather than forcing one language.
