@@ -39,7 +39,7 @@ describe("ChatMessage", () => {
       expect(messageContainer).toHaveClass("justify-end");
     });
 
-    it("ユーザーメッセージは青色の背景を持つ", () => {
+    it("ユーザーメッセージはプライマリ背景を持つ", () => {
       const message: Message = {
         ...baseMessage,
         role: "user",
@@ -47,7 +47,7 @@ describe("ChatMessage", () => {
       };
 
       const { container } = render(<ChatMessage message={message} />);
-      const messageBox = container.querySelector(".bg-blue-600");
+      const messageBox = container.querySelector(".bg-primary");
 
       expect(messageBox).toBeInTheDocument();
     });
@@ -82,7 +82,7 @@ describe("ChatMessage", () => {
       expect(messageContainer).toHaveClass("justify-start");
     });
 
-    it("アシスタントメッセージは灰色の背景を持つ", () => {
+    it("アシスタントメッセージはミュート背景を持つ", () => {
       const message: Message = {
         ...baseMessage,
         role: "assistant",
@@ -90,7 +90,7 @@ describe("ChatMessage", () => {
       };
 
       const { container } = render(<ChatMessage message={message} />);
-      const messageBox = container.querySelector(".bg-gray-100");
+      const messageBox = container.querySelector(".bg-muted");
 
       expect(messageBox).toBeInTheDocument();
     });
@@ -171,7 +171,7 @@ describe("ChatMessage", () => {
       expect(errorElement).toHaveTextContent("エラーが発生しました");
     });
 
-    it("アシスタントメッセージのエラーは赤色（text-red-500）で表示される", () => {
+    it("アシスタントメッセージのエラーはdestructive色で表示される", () => {
       const message: Message = {
         ...baseMessage,
         role: "assistant",
@@ -180,7 +180,7 @@ describe("ChatMessage", () => {
       };
 
       const { container } = render(<ChatMessage message={message} />);
-      const errorElement = container.querySelector(".text-red-500");
+      const errorElement = container.querySelector(".text-destructive");
 
       expect(errorElement).toBeInTheDocument();
       expect(errorElement).toHaveTextContent("エラーが発生しました");
@@ -194,7 +194,7 @@ describe("ChatMessage", () => {
       };
 
       const { container } = render(<ChatMessage message={message} />);
-      const errorElement = container.querySelector(".text-red-200, .text-red-500");
+      const errorElement = container.querySelector("[role=\"alert\"]");
 
       expect(errorElement).not.toBeInTheDocument();
     });
@@ -252,10 +252,7 @@ describe("ChatMessage", () => {
       // react-syntax-highlighterが使用されるため、コードが含まれていることを確認
       // テキストが含まれていることを確認（完全一致ではなく部分一致）
       // コードブロック内のテキストを検索（複数の方法で確認）
-      const codeContent = screen.queryByText(/const x = 1/);
-      // コードブロックがレンダリングされている場合、テキストが含まれている
-      // ただし、react-syntax-highlighterの実装によっては、テキストが直接取得できない場合がある
-      // そのため、エラーが発生しないことを確認
+      // react-syntax-highlighter の読み込み中も含め、描画で例外が起きないことを確認
       expect(() => render(<ChatMessage message={message} />)).not.toThrow();
     });
 
@@ -289,4 +286,3 @@ describe("ChatMessage", () => {
     });
   });
 });
-

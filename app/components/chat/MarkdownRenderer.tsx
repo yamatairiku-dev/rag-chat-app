@@ -1,9 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+} from "react";
 import ReactMarkdown from "react-markdown";
+import type { ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 // シンタックスハイライト用のテーマを遅延ロード（初回のみ読み込み）
-let vscDarkPlus: any = null;
+type SyntaxStyle = Record<string, CSSProperties>;
+
+let vscDarkPlus: SyntaxStyle | null = null;
 const loadStyle = async () => {
   if (!vscDarkPlus) {
     const styleModule = await import(
@@ -15,13 +24,15 @@ const loadStyle = async () => {
 };
 
 type SyntaxHighlighterType =
-  typeof import("react-syntax-highlighter")["Prism"];
+  typeof import("react-syntax-highlighter/dist/esm/prism-async-light").default;
 
 let cachedHighlighter: SyntaxHighlighterType | null = null;
 const loadHighlighter = async (): Promise<SyntaxHighlighterType> => {
   if (!cachedHighlighter) {
-    const mod = await import("react-syntax-highlighter");
-    cachedHighlighter = mod.Prism;
+    const mod = await import(
+      "react-syntax-highlighter/dist/esm/prism-async-light"
+    );
+    cachedHighlighter = mod.default;
   }
   return cachedHighlighter;
 };
@@ -31,11 +42,15 @@ type MarkdownRendererProps = {
 };
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  const [style, setStyle] = useState<any>(null);
+  const [style, setStyle] = useState<SyntaxStyle | null>(null);
   const [highlighter, setHighlighter] =
     useState<SyntaxHighlighterType | null>(null);
 
   useEffect(() => {
+    // Vitestの環境破棄後に非同期モジュールが解決されるのを防ぐ。
+    if (import.meta.env.MODE === "test") {
+      return;
+    }
     if (content.includes("```")) {
       const load = async () => {
         const [loadedStyle, loadedHighlighter] = await Promise.all([
@@ -51,7 +66,14 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
   const CodeComponent = useMemo(
     () =>
-      ({ node, inline, className, children, ...props }: any) => {
+      ({
+        node: _node,
+        inline,
+        className,
+        children,
+        style: _codeStyle,
+        ...props
+      }: ComponentPropsWithoutRef<"code"> & ExtraProps & { inline?: boolean }) => {
         if (inline) {
           return (
             <code className={className} {...props}>
@@ -93,4 +115,3 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
     </ReactMarkdown>
   );
 }
-

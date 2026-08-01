@@ -31,7 +31,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return null;
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
   return [
     { title: "ログイン - 社内RAG検索チャットボット" },
     {
@@ -66,4 +66,3 @@ export default function Login() {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 // テスト用の環境変数を設定（適切な形式で設定）
 process.env.PORT = process.env.PORT || '3000';
@@ -13,5 +13,4 @@ process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'test-session-secret-
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 process.env.LOG_DIRECTORY = process.env.LOG_DIRECTORY || './logs';
 process.env.LOG_MAX_FILES = process.env.LOG_MAX_FILES || '5';
-process.env.NODE_ENV = process.env.NODE_ENV || 'test';
-
+process.env.NODE_ENV = "test";

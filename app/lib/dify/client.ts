@@ -141,44 +141,53 @@ export class DifyClient {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
+    let completed = false;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          completed = true;
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const eventChunk of events) {
+          const dataLine = eventChunk
+            .split("\n")
+            .find((line) => line.startsWith("data:"));
+
+          if (!dataLine) {
+            continue;
+          }
+
+          const payload = dataLine.slice(5).trim();
+          if (!payload || payload === "[DONE]") {
+            continue;
+          }
+
+          try {
+            const event = JSON.parse(payload) as DifyStreamEvent;
+            yield event;
+          } catch (error) {
+            throw new AppError(
+              ErrorCode.DIFY_INVALID_RESPONSE,
+              `ストリーミングイベントの解析に失敗しました: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`,
+              502,
+            );
+          }
+        }
       }
-
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split("\n\n");
-      buffer = events.pop() ?? "";
-
-      for (const eventChunk of events) {
-        const dataLine = eventChunk
-          .split("\n")
-          .find((line) => line.startsWith("data:"));
-
-        if (!dataLine) {
-          continue;
-        }
-
-        const payload = dataLine.slice(5).trim();
-        if (!payload || payload === "[DONE]") {
-          continue;
-        }
-
-        try {
-          const event = JSON.parse(payload) as DifyStreamEvent;
-          yield event;
-        } catch (error) {
-          throw new AppError(
-            ErrorCode.DIFY_INVALID_RESPONSE,
-            `ストリーミングイベントの解析に失敗しました: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`,
-            502,
-          );
-        }
+    } finally {
+      if (!completed) {
+        await reader.cancel().catch(() => undefined);
       }
+      reader.releaseLock();
     }
   }
 

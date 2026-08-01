@@ -4,7 +4,7 @@ import { redirect } from "react-router";
 import { exchangeCodeForTokens } from "~/lib/auth/entra-client";
 import { getUserInfo, getUserDepartment } from "~/lib/graph/user-service";
 import { createSession } from "~/lib/session/session-manager";
-import { AppError, ErrorCode } from "~/types/error";
+import { AppError } from "~/types/error";
 import { logger } from "~/lib/logging/logger";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -96,4 +96,3 @@ export async function loader({ request }: Route.LoaderArgs) {
     );
   }
 }
-

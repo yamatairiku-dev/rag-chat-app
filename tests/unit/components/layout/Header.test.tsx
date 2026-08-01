@@ -25,7 +25,7 @@ describe("Header", () => {
     it("タイトルが表示される", () => {
       renderWithRouter(<Header user={baseUser} />);
 
-      expect(screen.getByText("社内RAG検索チャットボット")).toBeInTheDocument();
+      expect(screen.getByText("Difyフロントエンドアプリ")).toBeInTheDocument();
     });
 
     it("ユーザーの表示名が表示される", () => {
@@ -40,14 +40,13 @@ describe("Header", () => {
       expect(screen.getByText("test@example.com")).toBeInTheDocument();
     });
 
-    it("部署コードが表示される", () => {
+    it("部署名が表示される", () => {
       renderWithRouter(<Header user={baseUser} />);
 
-      const codes = screen.getAllByText(/001/);
-      expect(codes.length).toBeGreaterThan(0);
+      expect(screen.getByText("テスト部署")).toBeInTheDocument();
     });
 
-    it("部署名がある場合は部署名と部署コードが表示される", () => {
+    it("部署名がある場合は部署名が表示される", () => {
       const userWithDepartment = {
         ...baseUser,
         departmentNames: ["テスト部署"],
@@ -55,19 +54,15 @@ describe("Header", () => {
 
       renderWithRouter(<Header user={userWithDepartment} />);
 
-      // 表示形式は "テスト部署 (001)" なので複数ノードにマッチする場合は getAllByText を使用
-      const departmentTexts = screen.getAllByText(/テスト部署/);
-      expect(departmentTexts.length).toBeGreaterThan(0);
-      const departmentIds = screen.getAllByText(/001/);
-      expect(departmentIds.length).toBeGreaterThan(0);
+      expect(screen.getByText("テスト部署")).toBeInTheDocument();
     });
 
-    it("部署名がない場合は部署コードのみが表示される", () => {
-      renderWithRouter(<Header user={baseUser} />);
+    it("部署名がない場合は未設定が表示される", () => {
+      renderWithRouter(
+        <Header user={{ ...baseUser, departmentNames: [] }} />,
+      );
 
-      // 部署コードが表示されることを確認（複数箇所に表示される可能性があるため、getAllByTextを使用）
-      const departmentTexts = screen.getAllByText(/001/);
-      expect(departmentTexts.length).toBeGreaterThan(0);
+      expect(screen.getByText("未設定")).toBeInTheDocument();
     });
   });
 
@@ -156,7 +151,7 @@ describe("Header", () => {
         <Header user={baseUser} errorMessage="エラーが発生しました" />
       );
 
-      const errorElement = container.querySelector(".text-red-600");
+      const errorElement = container.querySelector(".text-destructive");
       expect(errorElement).toBeInTheDocument();
       expect(errorElement).toHaveTextContent("エラーが発生しました");
     });
@@ -164,14 +159,14 @@ describe("Header", () => {
     it("エラーメッセージがない場合は表示されない", () => {
       const { container } = renderWithRouter(<Header user={baseUser} />);
 
-      const errorElement = container.querySelector(".text-red-600");
+      const errorElement = container.querySelector("[role=\"alert\"]");
       expect(errorElement).not.toBeInTheDocument();
     });
 
     it("エラーメッセージがnullの場合は表示されない", () => {
       const { container } = renderWithRouter(<Header user={baseUser} errorMessage={null} />);
 
-      const errorElement = container.querySelector(".text-red-600");
+      const errorElement = container.querySelector("[role=\"alert\"]");
       expect(errorElement).not.toBeInTheDocument();
     });
   });
@@ -181,7 +176,7 @@ describe("Header", () => {
       const { container } = renderWithRouter(<Header user={baseUser} />);
       const header = container.querySelector("header");
 
-      expect(header).toHaveClass("border-b", "bg-white");
+      expect(header).toHaveClass("border-b", "bg-card");
     });
 
     it("コンテナが正しいクラスを持つ", () => {
@@ -192,4 +187,3 @@ describe("Header", () => {
     });
   });
 });
-

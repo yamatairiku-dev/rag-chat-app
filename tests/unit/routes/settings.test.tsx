@@ -9,11 +9,7 @@ vi.mock("~/lib/session/session-manager", () => ({
 }));
 
 vi.mock("~/components/layout/Header", () => ({
-  Header: ({ user }: { user: UserSession }) => (
-    <header data-testid="header">
-      <div>ユーザー: {user.displayName}</div>
-    </header>
-  ),
+  Header: () => <header data-testid="header" />,
 }));
 
 import { loader } from "~/routes/settings";
@@ -101,7 +97,6 @@ describe("settings route", () => {
       });
 
       expect(screen.getByText("test@example.com")).toBeInTheDocument();
-      expect(screen.getByText("001")).toBeInTheDocument();
       expect(screen.getByText("テスト部署")).toBeInTheDocument();
     });
 
@@ -176,10 +171,8 @@ describe("settings route", () => {
       await waitFor(() => {
         expect(screen.getByText("表示名")).toBeInTheDocument();
         expect(screen.getByText("メールアドレス")).toBeInTheDocument();
-        expect(screen.getByText("所属コード")).toBeInTheDocument();
         expect(screen.getByText("所属部署")).toBeInTheDocument();
       });
     });
   });
 });
-

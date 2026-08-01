@@ -25,7 +25,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return new Response(null, { status: 401 });
   }
 
-  let { session, sessionId } = sessionResult;
+  let { session } = sessionResult;
+  const { sessionId } = sessionResult;
 
   try {
     session = await ensureValidToken(sessionId, session);
@@ -94,13 +95,56 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const client = new DifyClient();
 
+  let cancelled = false;
+  const streamStartedAt = Date.now();
+
   const stream = new ReadableStream({
     async start(controller) {
+      const enqueue = (event: unknown): boolean => {
+        if (cancelled) {
+          return false;
+        }
+
+        try {
+          controller.enqueue(formatSse(event));
+          return true;
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            "code" in error &&
+            error.code === "ERR_INVALID_STATE"
+          ) {
+            cancelled = true;
+            return false;
+          }
+          throw error;
+        }
+      };
+
+      const close = () => {
+        if (cancelled) {
+          return;
+        }
+        try {
+          controller.close();
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            "code" in error &&
+            error.code === "ERR_INVALID_STATE"
+          ) {
+            cancelled = true;
+            return;
+          }
+          throw error;
+        }
+      };
+
       const initialConversationId =
         typeof conversationId === "string" ? conversationId : "";
       const userMessageId = randomUUID();
       const assistantMessageId = randomUUID();
-      const startedAt = Date.now();
+      const startedAt = streamStartedAt;
 
       const userMessage = {
         id: userMessageId,
@@ -126,7 +170,9 @@ export async function action({ request }: ActionFunctionArgs) {
           conversation_id: initialConversationId,
           user: session.userEmail,
         })) {
-          controller.enqueue(formatSse(event));
+          if (!enqueue(event)) {
+            return;
+          }
           assistantTimestamp = Date.now();
 
           if (event.event === "message") {
@@ -152,10 +198,15 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
-        controller.enqueue(formatSse({ event: "done" }));
-        controller.close();
+        if (!enqueue({ event: "done" })) {
+          return;
+        }
+        close();
         shouldPersist = true;
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
         logger.error("Streaming error in chat-stream", { error });
         const message =
           error instanceof AppError
@@ -170,11 +221,10 @@ export async function action({ request }: ActionFunctionArgs) {
           code: error instanceof AppError ? error.code : undefined,
         };
 
-        try {
-          controller.enqueue(formatSse(payload));
-        } finally {
-          controller.close();
+        if (!enqueue(payload)) {
+          return;
         }
+        close();
 
         assistantError = message;
         shouldPersist = true;
@@ -189,27 +239,52 @@ export async function action({ request }: ActionFunctionArgs) {
         assistantError ?? assistantContent;
 
       if (!resolvedConversationId || !assistantPayload) {
+        logger.info("Chat stream completed", {
+          conversationId: resolvedConversationId || undefined,
+          durationMs: Date.now() - streamStartedAt,
+          responseLength: assistantContent.length,
+          persisted: false,
+          hasError: Boolean(assistantError),
+        });
         return;
       }
 
-      await appendConversationMessages({
-        conversationId: resolvedConversationId,
-        userId: session.userId,
-        departmentIds: session.departmentIds,
-        messages: [
-          userMessage,
-          {
-            id: assistantMessageId,
-            role: "assistant",
-            content: assistantPayload,
-            timestamp: assistantTimestamp,
-            error: assistantError,
-          },
-        ],
-      });
+      try {
+        await appendConversationMessages({
+          conversationId: resolvedConversationId,
+          userId: session.userId,
+          departmentIds: session.departmentIds,
+          messages: [
+            userMessage,
+            {
+              id: assistantMessageId,
+              role: "assistant",
+              content: assistantPayload,
+              timestamp: assistantTimestamp,
+              error: assistantError,
+            },
+          ],
+        });
+        logger.info("Chat stream completed", {
+          conversationId: resolvedConversationId,
+          durationMs: Date.now() - streamStartedAt,
+          responseLength: assistantContent.length,
+          persisted: true,
+          hasError: Boolean(assistantError),
+        });
+      } catch (error) {
+        logger.error("Failed to persist chat stream", {
+          conversationId: resolvedConversationId,
+          durationMs: Date.now() - streamStartedAt,
+          error,
+        });
+      }
     },
     cancel() {
-      // Nothing to clean up currently.
+      cancelled = true;
+      logger.info("Chat stream cancelled by client", {
+        durationMs: Date.now() - streamStartedAt,
+      });
     },
   });
 

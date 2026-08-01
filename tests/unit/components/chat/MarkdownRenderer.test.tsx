@@ -40,12 +40,11 @@ describe("MarkdownRenderer", () => {
     expect(code).toHaveTextContent("インラインコード");
   });
 
-  it("正常系: コードブロックを含む場合はシンタックスハイライターが遅延ロードされる", async () => {
+  it("正常系: コードブロックを含む場合はcode要素が表示される", async () => {
     const content = "```js\nconst x = 1;\n```";
     const { container } = render(<MarkdownRenderer content={content} />);
 
-    // 初回はハイライターが未ロードのため通常のcode要素、
-    // 読み込み後はシンタックスハイライトされた要素に置き換わる
+    // テスト環境では非同期ハイライターをロードせず通常のcode要素を確認する
     await waitFor(() => {
       expect(container.querySelector("code, pre")).toBeInTheDocument();
     });

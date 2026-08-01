@@ -14,7 +14,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return redirect("/auth/login");
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
   return [
     { title: "社内RAG検索チャットボット" },
     { name: "description", content: "社内規則・マニュアルを検索できるチャットボット" },

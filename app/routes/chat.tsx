@@ -30,21 +30,6 @@ type LoaderData = {
   initialMessages?: Message[];
 };
 
-type ActionSuccess = {
-  success: true;
-  answer: string;
-  conversationId: string;
-  messageId: string;
-};
-
-type ActionError = {
-  success: false;
-  error: string;
-  errorId: string;
-};
-
-type ActionData = ActionSuccess | ActionError;
-
 export async function loader({ request }: Route.LoaderArgs) {
   try {
     const result = await getSessionWithId(request);
@@ -174,7 +159,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
   return [
     { title: "チャット - 社内RAG検索チャットボット" },
     {
@@ -362,15 +347,22 @@ export default function Chat() {
             continue;
           }
 
-          let payload: any;
+          let payload: unknown;
           try {
             payload = JSON.parse(payloadText);
           } catch {
             continue;
           }
 
-          if (payload.event === "message") {
-            aggregatedAnswer += payload.answer ?? "";
+          if (!payload || typeof payload !== "object") {
+            continue;
+          }
+
+          const eventPayload = payload as Record<string, unknown>;
+
+          if (eventPayload.event === "message") {
+            aggregatedAnswer +=
+              typeof eventPayload.answer === "string" ? eventPayload.answer : "";
             setMessages((prev) =>
               prev.map((message) =>
                 message.id === assistantMessageId
@@ -384,20 +376,20 @@ export default function Chat() {
             );
 
             if (
-              payload.conversation_id &&
-              payload.conversation_id !== effectiveConversationId
+              typeof eventPayload.conversation_id === "string" &&
+              eventPayload.conversation_id !== effectiveConversationId
             ) {
-              effectiveConversationId = payload.conversation_id;
-              applyConversationId(payload.conversation_id);
+              effectiveConversationId = eventPayload.conversation_id;
+              applyConversationId(eventPayload.conversation_id);
             }
-          } else if (payload.event === "message_end") {
+          } else if (eventPayload.event === "message_end") {
             finished = true;
             if (
-              payload.conversation_id &&
-              payload.conversation_id !== effectiveConversationId
+              typeof eventPayload.conversation_id === "string" &&
+              eventPayload.conversation_id !== effectiveConversationId
             ) {
-              effectiveConversationId = payload.conversation_id;
-              applyConversationId(payload.conversation_id);
+              effectiveConversationId = eventPayload.conversation_id;
+              applyConversationId(eventPayload.conversation_id);
             }
             setMessages((prev) =>
               prev.map((message) =>
@@ -410,10 +402,10 @@ export default function Chat() {
                   : message,
               ),
             );
-          } else if (payload.event === "error") {
+          } else if (eventPayload.event === "error") {
             const errorMessage =
-              typeof payload.message === "string"
-                ? payload.message
+              typeof eventPayload.message === "string"
+                ? eventPayload.message
                 : "メッセージ送信に失敗しました。";
             setMessages((prev) =>
               prev.map((message) =>
@@ -430,7 +422,7 @@ export default function Chat() {
             );
             setFormError(errorMessage);
             finished = true;
-          } else if (payload.event === "done") {
+          } else if (eventPayload.event === "done") {
             finished = true;
             setMessages((prev) =>
               prev.map((message) =>

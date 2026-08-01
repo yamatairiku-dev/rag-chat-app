@@ -73,8 +73,7 @@ export interface ErrorResponse {
   error: {
     code: ErrorCode;
     message: string;
-    details?: any;
+    details?: unknown;
   };
   timestamp: number;
 }
-

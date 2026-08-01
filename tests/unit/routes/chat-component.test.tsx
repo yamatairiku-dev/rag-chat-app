@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import Chat, { meta } from "~/routes/chat";
 import type { Message } from "~/types/chat";
@@ -338,6 +338,59 @@ describe("Chat component", () => {
     expect(global.fetch).toBeDefined();
   });
 
+  it("正常系: 入力を送信してストリーミング回答を表示する", async () => {
+    const encoded = new TextEncoder().encode(
+      'data: {"event":"message","answer":"回答です","conversation_id":"conv-new"}\n\n' +
+        'data: {"event":"done"}\n\n',
+    );
+    const mockReader = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({ value: encoded, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+    };
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      body: { getReader: () => mockReader },
+    } as unknown as Response);
+
+    const router = createMemoryRouter(
+      [{ path: "/chat", element: <Chat />, loader: () => baseLoaderData }],
+      { initialEntries: ["/chat"] },
+    );
+    render(<RouterProvider router={router} />);
+
+    const input = await screen.findByRole("textbox", { name: "メッセージ入力欄" });
+    fireEvent.change(input, { target: { value: "質問です" } });
+    fireEvent.click(screen.getByRole("button", { name: "メッセージを送信" }));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/chat-stream",
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(screen.getByText(/assistant: 回答です/)).toBeInTheDocument();
+      expect(setConversationIdMock).toHaveBeenCalledWith("conv-new");
+    });
+  });
+
+  it("異常系: 空入力では送信せずエラーを表示する", async () => {
+    const router = createMemoryRouter(
+      [{ path: "/chat", element: <Chat />, loader: () => baseLoaderData }],
+      { initialEntries: ["/chat"] },
+    );
+    render(<RouterProvider router={router} />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "メッセージを送信" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "メッセージを入力してください。",
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it("正常系: ストリーミングエラーレスポンスの処理", async () => {
     const mockResponse = {
       ok: false,
@@ -375,4 +428,3 @@ describe("Chat component", () => {
     expect(global.fetch).toBeDefined();
   });
 });
-

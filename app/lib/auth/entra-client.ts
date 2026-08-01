@@ -63,7 +63,7 @@ export async function exchangeCodeForTokens(code: string): Promise<{
 
     return {
       accessToken: response.accessToken!,
-      refreshToken: (response as any).refreshToken as string | undefined,
+      refreshToken: (response as AuthenticationResult & { refreshToken?: string }).refreshToken,
       idToken: response.idToken,
       expiresIn: response.expiresOn 
         ? Math.floor((response.expiresOn.getTime() - Date.now()) / 1000) 
@@ -107,7 +107,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 
     return {
       accessToken: response.accessToken!,
-      refreshToken: (response as any).refreshToken as string | undefined,
+      refreshToken: (response as AuthenticationResult & { refreshToken?: string }).refreshToken,
       expiresIn: response.expiresOn 
         ? Math.floor((response.expiresOn.getTime() - Date.now()) / 1000) 
         : 3600,
@@ -123,4 +123,3 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
     );
   }
 }
-

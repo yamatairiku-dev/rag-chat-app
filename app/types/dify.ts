@@ -123,7 +123,7 @@ export interface DifyMessageEndEvent {
       currency: string;
       latency: number;
     };
-    retriever_resources: Array<any>;
+    retriever_resources: unknown[];
   };
   created_at: number;
 }
@@ -148,4 +148,3 @@ export interface DifyErrorResponse {
   message: string;
   status: number;
 }
-

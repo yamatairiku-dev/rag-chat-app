@@ -332,6 +332,46 @@ describe("api/chat-stream action", () => {
     expect(response.status).toBe(200);
   });
 
+  it("クライアント切断後はストリームへ書き込まず会話を保存しない", async () => {
+    getSessionWithIdMock.mockResolvedValue({
+      session: { ...baseSession },
+      sessionId: "session-1",
+    });
+    ensureValidTokenMock.mockResolvedValue({ ...baseSession });
+
+    let continueStream: (() => void) | undefined;
+    const waiting = new Promise<void>((resolve) => {
+      continueStream = resolve;
+    });
+    let generatorClosed = false;
+    async function* generateEvents() {
+      try {
+        await waiting;
+        yield {
+          event: "message",
+          answer: "切断後の回答",
+          conversation_id: "conv-1",
+        };
+      } finally {
+        generatorClosed = true;
+      }
+    }
+
+    streamMessageMock.mockReturnValue(generateEvents());
+
+    const response = await action({
+      request: createJsonRequest({ query: "テスト" }),
+    } as never);
+    const reader = response.body!.getReader();
+    await reader.cancel();
+    continueStream?.();
+
+    await vi.waitFor(() => {
+      expect(generatorClosed).toBe(true);
+    });
+    expect(appendConversationMessagesMock).not.toHaveBeenCalled();
+  });
+
   it("message_endイベントでconversation_idが変更される場合を処理", async () => {
     getSessionWithIdMock.mockResolvedValue({
       session: { ...baseSession },

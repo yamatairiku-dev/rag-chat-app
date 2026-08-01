@@ -21,24 +21,12 @@ describe("logger", () => {
     });
   });
 
-  it("正常系: errorレベルのログはファイルに出力される", () => {
-    const errorTransport = logger.transports.find(
-      (t) =>
-        t instanceof winston.transports.File &&
-        (t as winston.transports.FileTransportInstance).level === "error"
+  it("正常系: テスト環境ではファイルへログを出力しない", () => {
+    const fileTransports = logger.transports.filter(
+      (transport) => transport instanceof winston.transports.File,
     );
-    
-    expect(errorTransport).toBeDefined();
-  });
 
-  it("正常系: すべてのレベルのログはファイルに出力される", () => {
-    const combinedTransport = logger.transports.find(
-      (t) =>
-        t instanceof winston.transports.File &&
-        !(t as winston.transports.FileTransportInstance).level
-    );
-    
-    expect(combinedTransport).toBeDefined();
+    expect(fileTransports).toHaveLength(0);
   });
 
   it("正常系: 開発環境ではコンソールにも出力される", () => {
@@ -47,10 +35,7 @@ describe("logger", () => {
       (t) => t instanceof winston.transports.Console
     );
     
-    // 開発環境ではコンソールトランスポートが存在する
-    if (process.env.NODE_ENV !== "production") {
-      expect(consoleTransport).toBeDefined();
-    }
+    expect(consoleTransport).toBeDefined();
   });
 
   it("正常系: ロガーは実際にログを出力できる", () => {
@@ -88,12 +73,11 @@ describe("logger", () => {
     expect(logger.transports.length).toBeGreaterThan(0);
   });
 
-  it("正常系: ファイルトランスポートが設定されている", () => {
-    const fileTransports = logger.transports.filter(
-      (t) => t instanceof winston.transports.File
-    );
-    
-    expect(fileTransports.length).toBeGreaterThanOrEqual(2);
+  it("正常系: テスト用トランスポートは出力を抑制する", () => {
+    const consoleTransport = logger.transports.find(
+      (transport) => transport instanceof winston.transports.Console,
+    ) as winston.transports.ConsoleTransportInstance | undefined;
+
+    expect(consoleTransport?.silent).toBe(true);
   });
 });
-

@@ -11,11 +11,20 @@ export default defineConfig(({ mode }) => {
     plugins: [
       tailwindcss(),
       // テスト環境ではReact Routerプラグインを条件付きで適用
-      ...(process.env.NODE_ENV !== 'test' ? [reactRouter()] : []),
+      ...(mode !== "test" ? [reactRouter()] : []),
       tsconfigPaths(),
     ],
     server: {
       port: env.PORT ? parseInt(env.PORT, 10) : 5173,
+    },
+    optimizeDeps: {
+      // 初回のMarkdown表示中に依存最適化によるページ再読み込みを発生させない。
+      include: [
+        "react-markdown",
+        "remark-gfm",
+        "react-syntax-highlighter/dist/esm/prism-async-light",
+        "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus",
+      ],
     },
     ssr: {
       // markdown系を外部化せずにバンドルさせ、manualChunks指定を安定化
@@ -42,12 +51,6 @@ export default defineConfig(({ mode }) => {
                 id.includes("/vfile")
               ) {
                 return "markdown";
-              }
-              if (
-                id.includes("react-syntax-highlighter") ||
-                id.includes("refractor")
-              ) {
-                return "syntax";
               }
             }
             return undefined;
