@@ -1,4 +1,4 @@
-import { Form } from "react-router";
+import { Form, Link } from "react-router";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 
@@ -48,6 +48,17 @@ export function Header({ user, appTitle = "Difyフロントエンドアプリ", 
         <div>
           <h1 className="text-xl font-bold text-foreground">{appTitle}</h1>
         </div>
+        <nav className="flex items-center gap-1" aria-label="メインナビゲーション">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/chat">チャット</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/conversations">会話履歴</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/settings">設定</Link>
+          </Button>
+        </nav>
         <div className="flex items-center gap-4">
           <div className="text-right text-xs" aria-label="ユーザー情報">
             <p className="font-medium text-foreground">{user.displayName}</p>
