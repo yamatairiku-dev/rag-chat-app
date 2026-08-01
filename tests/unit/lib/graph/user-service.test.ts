@@ -3,6 +3,7 @@ import { AppError, ErrorCode } from "~/types/error";
 
 vi.mock("~/lib/graph/graph-client", () => ({
   createGraphClient: vi.fn(),
+  withGraphRetry: vi.fn((operation: () => unknown) => operation()),
 }));
 
 vi.mock("~/lib/utils/env", () => ({
@@ -37,6 +38,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockUser),
       };
 
@@ -51,6 +53,7 @@ describe("user-service", () => {
 
     it("異常系: ユーザー情報が取得できない場合、AppErrorを投げる", async () => {
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(null),
       };
 
@@ -70,6 +73,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockUser),
       };
 
@@ -85,6 +89,7 @@ describe("user-service", () => {
     it("異常系: Graph APIエラー時にAppErrorを投げる", async () => {
       const error = new Error("Graph API error");
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockRejectedValue(error),
       };
 
@@ -114,6 +119,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -142,6 +148,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -158,6 +165,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -179,6 +187,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -202,6 +211,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -217,6 +227,7 @@ describe("user-service", () => {
     it("異常系: Graph APIエラー時にAppErrorを投げる", async () => {
       const error = new Error("Graph API error");
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockRejectedValue(error),
       };
 
@@ -240,6 +251,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -263,6 +275,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -284,6 +297,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -304,6 +318,7 @@ describe("user-service", () => {
       };
 
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockResolvedValue(mockResponse),
       };
 
@@ -329,6 +344,7 @@ describe("user-service", () => {
     it("異常系: AppError以外のエラーが発生した場合はAppErrorに変換", async () => {
       const error = new Error("Unknown error");
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockRejectedValue(error),
       };
 
@@ -343,6 +359,7 @@ describe("user-service", () => {
 
     it("異常系: 文字列エラーが発生した場合もAppErrorに変換", async () => {
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockRejectedValue("String error"),
       };
 
@@ -362,6 +379,7 @@ describe("user-service", () => {
         500
       );
       const mockApi = {
+        select: vi.fn().mockReturnThis(),
         get: vi.fn().mockRejectedValue(appError),
       };
 

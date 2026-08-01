@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { Client } from "@microsoft/microsoft-graph-client";
 
 // モック
@@ -8,7 +8,7 @@ vi.mock("@microsoft/microsoft-graph-client", () => ({
   },
 }));
 
-import { createGraphClient } from "~/lib/graph/graph-client";
+import { createGraphClient, withGraphRetry } from "~/lib/graph/graph-client";
 
 const ClientInitMock = vi.mocked(Client.init);
 
@@ -45,6 +45,82 @@ describe("graph-client", () => {
     authProvider(doneCallback);
 
     expect(doneCallback).toHaveBeenCalledWith(null, accessToken);
+  });
+});
+
+describe("withGraphRetry", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("正常系: 成功した場合はそのまま結果を返す", async () => {
+    const operation = vi.fn().mockResolvedValue("ok");
+
+    const result = await withGraphRetry(operation);
+
+    expect(result).toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it("正常系: statusCode不明のエラーはリトライして成功する", async () => {
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network error"))
+      .mockResolvedValueOnce("ok");
+
+    const resultPromise = withGraphRetry(operation);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await resultPromise;
+
+    expect(result).toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it("正常系: 5xxエラーはリトライして成功する", async () => {
+    const serverError = Object.assign(new Error("server error"), {
+      statusCode: 503,
+    });
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(serverError)
+      .mockResolvedValueOnce("ok");
+
+    const resultPromise = withGraphRetry(operation);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await resultPromise;
+
+    expect(result).toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it("異常系: 4xxエラーは即座に投げてリトライしない", async () => {
+    const clientError = Object.assign(new Error("not found"), {
+      statusCode: 404,
+    });
+    const operation = vi.fn().mockRejectedValue(clientError);
+
+    await expect(withGraphRetry(operation)).rejects.toBe(clientError);
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it("異常系: 上限回数まで再試行してもなお失敗する場合は最後のエラーを投げる", async () => {
+    const serverError = Object.assign(new Error("still down"), {
+      statusCode: 500,
+    });
+    const operation = vi.fn().mockRejectedValue(serverError);
+
+    const resultPromise = withGraphRetry(operation);
+    resultPromise.catch(() => {
+      // 未処理拒否警告を防ぐためのno-op（下でrejectsアサーション済み）
+    });
+    await vi.advanceTimersByTimeAsync(5000);
+
+    await expect(resultPromise).rejects.toBe(serverError);
+    expect(operation).toHaveBeenCalledTimes(3); // 初回 + 2回リトライ
   });
 });
 
