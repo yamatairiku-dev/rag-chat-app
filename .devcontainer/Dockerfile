@@ -45,4 +45,7 @@ USER node
 RUN curl -fsSL https://claude.ai/install.sh | bash
 RUN curl -fsSL https://chatgpt.com/codex/install.sh | sh
 
+COPY --chown=node:node .devcontainer/git-branch-prompt.sh /home/node/.git-branch-prompt.sh
+RUN echo '[ -f ~/.git-branch-prompt.sh ] && . ~/.git-branch-prompt.sh' >> ~/.bashrc
+
 WORKDIR /workspace
