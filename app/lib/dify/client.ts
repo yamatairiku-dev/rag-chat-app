@@ -123,55 +123,12 @@ export class DifyClient {
   }
 
   /**
-   * ストリーミングモードのチャットメッセージ送信
+   * ストリーミングモードのチャットメッセージ送信（接続確立まで自動リトライ、接続後はリトライしない）
    */
   async *streamMessage(
     request: DifyStreamRequest,
   ): AsyncGenerator<DifyStreamEvent> {
-    const url = this.buildUrl(CHAT_MESSAGES_ENDPOINT);
-    const headers = this.createHeaders();
-    const body = JSON.stringify(request);
-
-    logger.debug("Dify API request", {
-      url,
-      method: "POST",
-      headers: {
-        ...headers,
-        Authorization: headers.Authorization ? "Bearer ***" : undefined,
-      },
-      body: request,
-    });
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body,
-    });
-
-    if (!response.ok) {
-      let errorBody: unknown;
-      try {
-        errorBody = await response.json();
-        logger.error("Dify API error response", {
-          status: response.status,
-          statusText: response.statusText,
-          url,
-          errorBody,
-        });
-      } catch (parseError) {
-        logger.error("Dify API error (failed to parse response)", {
-          status: response.status,
-          statusText: response.statusText,
-          url,
-          parseError: parseError instanceof Error ? parseError.message : String(parseError),
-        });
-        /* noop - fallback to generic error */
-      }
-      throw this.toAppError(
-        this.isErrorResponse(errorBody) ? errorBody : undefined,
-        response.status,
-      );
-    }
+    const response = await this.connectStream(request);
 
     if (!response.body) {
       throw new AppError(
@@ -223,6 +180,108 @@ export class DifyClient {
         }
       }
     }
+  }
+
+  /**
+   * ストリーミング用の接続確立（自動リトライ付き）
+   * レスポンスヘッダー受信までをリトライ対象とし、ボディの読み取り開始後はリトライしない
+   */
+  private async connectStream(request: DifyStreamRequest): Promise<Response> {
+    const url = this.buildUrl(CHAT_MESSAGES_ENDPOINT);
+    const headers = this.createHeaders();
+    const body = JSON.stringify(request);
+    const maxRetries = env.DIFY_MAX_RETRIES;
+    let lastError: Error | AppError | null = null;
+
+    logger.debug("Dify API request", {
+      url,
+      method: "POST",
+      headers: {
+        ...headers,
+        Authorization: headers.Authorization ? "Bearer ***" : undefined,
+      },
+      body: request,
+    });
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers,
+          body,
+        });
+
+        if (!response.ok) {
+          let errorBody: unknown;
+          try {
+            errorBody = await response.json();
+            logger.error("Dify API error response", {
+              status: response.status,
+              statusText: response.statusText,
+              url,
+              errorBody,
+            });
+          } catch (parseError) {
+            logger.error("Dify API error (failed to parse response)", {
+              status: response.status,
+              statusText: response.statusText,
+              url,
+              parseError: parseError instanceof Error ? parseError.message : String(parseError),
+            });
+            /* noop - fallback to generic error */
+          }
+          const error = this.toAppError(
+            this.isErrorResponse(errorBody) ? errorBody : undefined,
+            response.status,
+          );
+
+          // 4xxエラー（クライアントエラー）はリトライしない
+          if (response.status >= 400 && response.status < 500) {
+            throw error;
+          }
+
+          // 5xxエラー（サーバーエラー）はリトライ可能
+          lastError = error;
+          if (attempt < maxRetries) {
+            await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+            continue;
+          }
+          throw error;
+        }
+
+        return response;
+      } catch (error) {
+        if (error instanceof AppError) {
+          // 4xxエラーはリトライしない
+          if (error.statusCode >= 400 && error.statusCode < 500) {
+            throw error;
+          }
+
+          lastError = error;
+          if (attempt < maxRetries) {
+            await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+            continue;
+          }
+          throw error;
+        }
+
+        // ネットワークエラーやタイムアウトはリトライ可能
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries) {
+          logger.debug(`[DifyClient] ストリーミング接続リトライ試行 ${attempt + 1}/${maxRetries}`, { error: lastError.message });
+          await this.delay(1000 * (attempt + 1)); // 指数バックオフ
+          continue;
+        }
+      }
+    }
+
+    throw new AppError(
+      ErrorCode.DIFY_CONNECTION_FAILED,
+      `Dify APIとの通信に失敗しました（${maxRetries + 1}回試行）: ${
+        lastError instanceof Error ? lastError.message : "Unknown error"
+      }`,
+      502,
+    );
   }
 
   private toAppError(

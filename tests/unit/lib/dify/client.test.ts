@@ -559,6 +559,82 @@ describe("DifyClient", () => {
     expect(events[1]).toMatchObject({ event: "message", answer: "こんにちは" });
   });
 
+  it("streamMessage: 接続確立時の5xxエラーをリトライしてから成功する", async () => {
+    vi.resetModules();
+    vi.doMock("~/lib/utils/env", () => ({
+      env: {
+        DIFY_API_URL: "https://dify.test/api",
+        DIFY_API_KEY: "app-test-key",
+        DIFY_TIMEOUT: 5000,
+        DIFY_MAX_RETRIES: 1,
+      },
+    }));
+    const { DifyClient: RetryableDifyClient } = await import(
+      "~/lib/dify/client"
+    );
+
+    const encoder = new TextEncoder();
+    const successBody = encoder.encode(
+      `data: ${JSON.stringify({
+        event: "message",
+        answer: "こんにちは",
+        conversation_id: "conv-1",
+        message_id: "msg-1",
+        mode: "chat",
+        task_id: "task-1",
+        id: "evt-1",
+        created_at: Date.now(),
+      })}\n\n`,
+    );
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: "server_error", message: "boom", status: 500 }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(successBody);
+              controller.close();
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "text/event-stream" } },
+        ),
+      );
+
+    vi.useFakeTimers();
+    try {
+      const client = new RetryableDifyClient();
+      const events: unknown[] = [];
+
+      const consume = (async () => {
+        for await (const event of client.streamMessage({
+          inputs: { user_id: "user@test", department_names: "001" },
+          query: "テスト",
+          response_mode: "streaming",
+          conversation_id: "",
+          user: "user@test",
+        })) {
+          events.push(event);
+        }
+      })();
+
+      await vi.advanceTimersByTimeAsync(1000);
+      await consume;
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(events).toHaveLength(1);
+      expect(events[0]).toMatchObject({ event: "message", answer: "こんにちは" });
+    } finally {
+      vi.useRealTimers();
+      vi.doUnmock("~/lib/utils/env");
+    }
+  });
+
   it("buildUrl: baseUrlの末尾スラッシュを削除する", async () => {
     const responseBody = {
       event: "message",
